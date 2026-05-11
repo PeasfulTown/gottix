@@ -1,0 +1,158 @@
+services:
+
+  # ====================================================
+  # INFRASTRUCTURE
+  # ====================================================
+
+  # == PostgreSQL — one instance, separate databases per service ========
+  postgres:
+    image: postgres:16-alpine
+    container_name: gottix_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_DB: gottix
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgres/data
+      - ./init-scripts/postgres/db_init.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    networks:
+      - gottix
+
+  # == Redis - JWT blocklist + rate limiting ============================
+  redis:
+    image: redis:7-alpine
+    container_name: gottix_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass password
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gottix
+
+  # == RabbitMQ - async events between services ========================
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: gottix_rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_VHOST: gottix
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - gottix
+
+  # == Elasticsearch - ticket search index + log storage ===============
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: gottix_elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - cluster.name=gottix-cluster
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - gottix
+
+  # == Kibana ===========================================================
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: gottix_kibana
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - gottix
+
+  # == Logstash =========================================================
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.4
+    container_name: gottix_logstash
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5000:5000"   # TCP - Logback ships JSON here
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/config/logstash.yaml:/usr/share/logstash/config/logstash.yml
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+    networks:
+      - gottix
+
+  # ====================================================
+  # SPRING CLOUD INFRASTRUCTURE
+  # ====================================================
+
+  # == Config server ====================================================
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: gottix_config_server
+    restart: unless-stopped
+    depends_on:
+      - eureka-server
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./config-repo:/config-repo
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config-repo
+      EUREKA_SERVICE_URL: http://eureka-server:8761
+    networks:
+      - gottix
+
+  # == Service registry (Eureka) ========================================
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: gottix_eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - gottix
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
+  es_data:
+
+networks:
+  gottix:
+    name: gottix
+    driver: bridge
+
