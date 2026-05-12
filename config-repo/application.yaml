@@ -34,6 +34,17 @@ spring:
       write-dates-as-timestamps: false
     time-zone: UTC
 
+security:
+  oauth2:
+    resourceserver:
+      jwt:
+        secret-key: ThisIsADevSecretKeyThatMustBeAtLeast256BitsLongForHS256Algorithm
+
+jwt:
+  secret: ThisIsADevSecretKeyThatMustBeAtLeast256BitsLongForHS256Algorithm
+  expiration-ms: 86400000        # 24 h
+  refresh-expiration-ms: 604800000  # 7 d
+
 logging:
   level:
     org.springframework.security: WARN
