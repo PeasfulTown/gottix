@@ -293,13 +293,13 @@ components:
         password:
           type: string
           format: password
-          minLength: 1
+          minLength: 5
         firstName:
           type: string
-          minLength: 1
+          minLength: 3
         lastName:
           type: string
-          minLength: 1
+          minLength: 3
         phone:
           type: string
           minLength: 10
@@ -311,16 +311,21 @@ components:
       properties:
         email:
           type: string
+          minLength: 5
         password:
           type: string
+          minLength: 5
 
     Token:
       type: object
+      required: [ accessToken, refreshToken ]
       properties:
         accessToken:
           type: string
+          minLength: 10
         refreshToken:
           type: string
+          minLength: 10
 
     RefreshToken:
       type: object
@@ -328,6 +333,7 @@ components:
       properties:
         token:
           type: string
+          minLength: 5
 
     User:
       type: object
@@ -354,9 +360,14 @@ components:
         email:
           type: string
           format: email
+          minLength: 5
         firstName:
           type: string
+          minLength: 3
         lastName:
           type: string
+          minLength: 3
         phone:
           type: string
+          minLength: 10
+          maxLength: 10
