@@ -13,13 +13,6 @@ spring:
     wait-time-in-ms-when-sync-empty: 0
     enable-self-preservation: false
 
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: false # config server doesn't need to know about other services
-    serviceUrl:
-      defaultZone: ${EUREKA_SERVICE_URL}/eureka
-
 logging:
   level:
     org.springframework.cloud.config: DEBUG
