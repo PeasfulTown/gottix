@@ -44,8 +44,4 @@ public class UserEntity {
     @Builder.Default
     private List<RefreshTokenEntity> refreshTokens = new ArrayList<>();
 
-    public void addRefreshToken(RefreshTokenEntity rte) {
-        rte.setUser(this);
-        this.refreshTokens.add(rte);
-    }
 }

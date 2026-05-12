@@ -1,8 +1,7 @@
-server.port: 8080
 spring:
 
   application:
     name: AuthService
 
   config:
-    import: optional:configserver:${CONFIG_SERVICE_URL}
+    import: configserver:http://localhost:8888
