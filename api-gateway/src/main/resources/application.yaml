@@ -2,3 +2,5 @@ spring:
 
   application:
     name: ApiGateway
+  config:
+    import: configserver:http://config-server:8888
