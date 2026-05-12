@@ -1,0 +1,13 @@
+server.port: 8080
+spring:
+
+  cloud.gateway.server.webflux.routes:
+    - id: auth-service
+      uri: lb://AuthService
+      predicates:
+        - Path=/api/v1/auth/**,/api/v1/users/**
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE

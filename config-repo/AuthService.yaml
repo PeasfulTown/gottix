@@ -1,0 +1,12 @@
+server.port: 8081
+
+spring:
+
+  data:
+    redis:
+      url: ${DB_REDIS_URL}
+
+jwt:
+  secret: ThisIsADevSecretKeyThatMustBeAtLeast256BitsLongForHS256Algorithm
+  expiration-ms: 86400000        # 24 h
+  refresh-expiration-ms: 604800000  # 7 d
