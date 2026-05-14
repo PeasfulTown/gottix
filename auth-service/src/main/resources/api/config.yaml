@@ -1,7 +1,7 @@
 library: "spring-boot"
-modelPackage: "xyz.peasfultown.ecommerce.auth_service.model"
-apiPackage: "xyz.peasfultown.ecommerce.auth_service"
-invokerPackage: "xyz.peasfultown.ecommerce.auth_service"
+modelPackage: "xyz.peasfultown.gottix.auth_service.model"
+apiPackage: "xyz.peasfultown.gottix.auth_service"
+invokerPackage: "xyz.peasfultown.gottix.auth_service"
 dateLibrary: "java8"
 unhandledException: true
 sourceFolder: "src/main/java"
