@@ -1,0 +1,7 @@
+spring:
+
+  application:
+    name: TicketService
+
+  config:
+    import: configserver:http://localhost:8888
