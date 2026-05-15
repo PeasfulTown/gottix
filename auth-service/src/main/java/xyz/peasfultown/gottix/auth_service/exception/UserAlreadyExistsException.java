@@ -2,8 +2,8 @@ package xyz.peasfultown.gottix.auth_service.exception;
 
 import org.springframework.http.HttpStatus;
 
-public class UserAlreadyExistsException extends CustomErrorResponseException {
+public class UserAlreadyExistsException extends BaseException {
     public UserAlreadyExistsException(String message) {
-        super(HttpStatus.BAD_REQUEST, message);
+        super(message, "USER_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
     }
 }
