@@ -58,7 +58,7 @@ class TicketCrudIntegrationTest extends BaseIntegrationTest {
         @DisplayName("create with HIGH priority - priority stored correctly")
         void createTicket_highPriority_storedCorrectly() throws Exception {
             mockMvc.perform(withCustomer(post(BASE_URL))
-                            .content(createTicketBody("Urgent issue", "Production is down", "HIGH")))
+                            .content(createTicketBody("Urgent issue", "Production is down", "HIGH", CUSTOMER_ID)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.priority").value("HIGH"));
         }

@@ -1,16 +1,14 @@
 package xyz.peasfultown.gottix.ticket_service.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "comment")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -21,7 +19,7 @@ public class CommentEntity extends BaseEntity {
     @Builder.Default
     private UUID id = UUID.randomUUID();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_id")
     private TicketEntity ticket;
 

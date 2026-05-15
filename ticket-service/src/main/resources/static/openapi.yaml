@@ -39,7 +39,7 @@ paths:
     post:
       tags: [ ticket ]
       summary: Create ticket (customer, agent, admin)
-      operationId: getTickets
+      operationId: createTicket
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/UserRoleHeader'
@@ -53,8 +53,8 @@ paths:
 
     get:
       tags: [ ticket ]
-      summary: Get ticket by ID
-      operationId: getTicket (customer owner, agent, admin)
+      summary: Get ticket by ID (customer owner, agent, admin)
+      operationId: getTicket
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/UserRoleHeader'
@@ -77,25 +77,27 @@ paths:
         $ref: '#/components/requestBodies/TicketUpdateRequest'
       responses:
         '200':
-          $ref: '#/components/responses/SingleTicketResponse'
+          $ref: '#/components/responses/SingleTicketSummaryResponse'
 
     delete:
       tags: [ ticket ]
-      summary: Delete ticket by ID
-      operationId: deleteTicket (customer owner, agent, admin)
+      summary: Delete ticket by ID (customer owner, agent, admin)
+      operationId: deleteTicket
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       responses:
         '204':
-          $ref: '#/components/responses/SingleTicketResponse'
+          $ref: '#/components/responses/NoContent'
 
   /api/v1/tickets/{ticketId}/assign:
 
     patch:
       tags: [ ticket ]
       summary: Assign ticket to agent (agent, admin)
+      description: Lets agent and admin assign ticket to themselves, or an admin to assign ticket
+        to an agent, an agent cannot assign a ticket to another agent
       operationId: assignTicketToAgent
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
@@ -175,8 +177,8 @@ paths:
 
     patch:
       tags: [ ticket ]
-      summary: Edit own comment
-      operationId: editTicketComment (owner)
+      summary: Edit own comment (owner)
+      operationId: editTicketComment
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/UserRoleHeader'
@@ -206,16 +208,16 @@ paths:
     get:
       tags: [ ticket ]
       summary: Get agent's assigned tickets, paginated (agent)
-      operationId: getAssignedTickets (agent, admin)
+      operationId: getAssignedTickets
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/StatusQuery'
         - $ref: '#/components/parameters/PriorityQuery'
-        - $ref: '#/components/parameters/PageNumberQuery'
-        - $ref: '#/components/parameters/PageSizeQuery'
         - $ref: '#/components/parameters/SortByQuery'
         - $ref: '#/components/parameters/SortOrderQuery'
+        - $ref: '#/components/parameters/PageNumberQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
       responses:
         '200':
           $ref: '#/components/responses/PagedTicketSummaryResponse'
@@ -231,10 +233,10 @@ paths:
         - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/StatusQuery'
         - $ref: '#/components/parameters/PriorityQuery'
-        - $ref: '#/components/parameters/PageNumberQuery'
-        - $ref: '#/components/parameters/PageSizeQuery'
         - $ref: '#/components/parameters/SortByQuery'
         - $ref: '#/components/parameters/SortOrderQuery'
+        - $ref: '#/components/parameters/PageNumberQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
       responses:
         '200':
           $ref: '#/components/responses/PagedTicketSummaryResponse'
@@ -292,14 +294,14 @@ components:
       in: query
       schema:
         $ref: '#/components/schemas/SortField'
-        default: "createdAt"
+        default: "CREATED_AT"
 
     SortOrderQuery:
       name: sortOrder
       in: query
       schema:
         $ref: '#/components/schemas/SortOrder'
-        default: "desc"
+        default: "DESC"
 
     TicketIdPath:
       name: ticketId
@@ -385,6 +387,13 @@ components:
           schema:
             $ref: '#/components/schemas/PagedTicketSummaryResponse'
 
+    SingleTicketSummaryResponse:
+      description: Ticket summary object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketSummary'
+
     SingleTicketResponse:
       description: Ticket object with embedded comments
       content:
@@ -435,7 +444,7 @@ components:
     TicketStatus:
       type: string
       enum:
-        - OPEN
+        - OPENED
         - IN_PROGRESS
         - RESOLVED
         - CLOSED
@@ -456,8 +465,8 @@ components:
     SortOrder:
       type: string
       enum:
-        - desc
-        - asc
+        - DESC
+        - ASC
 
     ResponsePage:
       type: object
@@ -492,7 +501,7 @@ components:
             content:
               type: array
               items:
-                $ref: '#/components/schemas/Ticket'
+                $ref: '#/components/schemas/TicketSummary'
 
     Ticket:
       type: object
@@ -515,6 +524,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Comment'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TicketSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        customerId:
+          type: string
+        assignedAgentId:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -560,7 +591,7 @@ components:
         description:
           type: string
         priority:
-          type: string
+          $ref: '#/components/schemas/TicketPriority'
 
     TicketAssignRequest:
       type: object

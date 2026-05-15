@@ -31,13 +31,13 @@ public class TicketListViewIntegrationTest extends BaseIntegrationTest {
         void createTickets() throws Exception {
             // CUSTOMER creates 2 tickets
             mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("My first issue", "Desc one", "LOW")));
+                    .content(createTicketBody("My first issue", "Desc one", "LOW", CUSTOMER_ID)));
             mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("My second issue", "Desc two", "HIGH")));
+                    .content(createTicketBody("My second issue", "Desc two", "HIGH", CUSTOMER_ID)));
 
             // CUSTOMER_2 creates 1 ticket - should NOT appear in CUSTOMER's /me
             mockMvc.perform(withCustomer2(post(BASE))
-                    .content(createTicketBody("Other customer issue", "Desc three", "MEDIUM")));
+                    .content(createTicketBody("Other customer issue", "Desc three", "MEDIUM", CUSTOMER_ID_2)));
         }
 
         @Test
@@ -144,9 +144,9 @@ public class TicketListViewIntegrationTest extends BaseIntegrationTest {
         void createAndAssignTickets() throws Exception {
             // Create 2 tickets and assign to AGENT
             String t1 = extractId(mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("Ticket assigned to agent", "Desc", "HIGH"))));
+                    .content(createTicketBody("Ticket assigned to agent", "Desc", "HIGH", CUSTOMER_ID))));
             String t2 = extractId(mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("Another assigned ticket", "Desc", "LOW"))));
+                    .content(createTicketBody("Another assigned ticket", "Desc", "LOW", CUSTOMER_ID))));
 
             mockMvc.perform(withAdmin(patch(BASE + "/{id}/assign", t1))
                     .content(toJson(Map.of("agentId", AGENT_ID))));
@@ -155,7 +155,7 @@ public class TicketListViewIntegrationTest extends BaseIntegrationTest {
 
             // Create 1 ticket assigned to AGENT_2 - should NOT appear for AGENT
             String t3 = extractId(mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("Agent 2 ticket", "Desc", "MEDIUM"))));
+                    .content(createTicketBody("Agent 2 ticket", "Desc", "MEDIUM", CUSTOMER_ID))));
             mockMvc.perform(withAdmin(patch(BASE + "/{id}/assign", t3))
                     .content(toJson(Map.of("agentId", AGENT_ID_2))));
         }
@@ -215,8 +215,8 @@ public class TicketListViewIntegrationTest extends BaseIntegrationTest {
         @DisplayName("sort by createdAt desc - most recent first")
         void sortByCreatedAtDesc() throws Exception {
             mockMvc.perform(withAgent(get(ASSIGNED)
-                            .param("sortBy",    "createdAt")
-                            .param("sortOrder", "desc")))
+                            .param("sortBy",    "CREATED_AT")
+                            .param("sortOrder", "DESC")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content").isArray());
         }

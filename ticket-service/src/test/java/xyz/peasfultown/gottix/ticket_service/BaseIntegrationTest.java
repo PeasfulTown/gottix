@@ -34,9 +34,9 @@ public abstract class BaseIntegrationTest {
 	protected static final String CUSTOMER_ID  = "00000000-0000-0000-0000-000000000004";
 	protected static final String CUSTOMER_ID_2 = "00000000-0000-0000-0000-000000000005";
 
-	protected static final String ROLE_ADMIN    = "ROLE_ADMIN";
-	protected static final String ROLE_AGENT    = "ROLE_AGENT";
-	protected static final String ROLE_CUSTOMER = "ROLE_CUSTOMER";
+	protected static final String ROLE_ADMIN    = "ADMIN";
+	protected static final String ROLE_AGENT    = "AGENT";
+	protected static final String ROLE_CUSTOMER = "CUSTOMER";
 
 	// helper mock http request builder
 	protected MockHttpServletRequestBuilder withAdmin(MockHttpServletRequestBuilder builder) {
@@ -82,18 +82,20 @@ public abstract class BaseIntegrationTest {
 
 	// common ticket req bodies
 
-	protected String createTicketBody(String title, String description, String priority) throws Exception {
+	protected String createTicketBody(String title, String description, String priority, String customerId) throws Exception {
 		return toJson(java.util.Map.of(
 				"title",       title,
 				"description", description,
-				"priority",    priority
+				"priority",    priority,
+				"customerId",  customerId
 		));
 	}
 
 	protected String defaultTicketBody() throws Exception {
 		return createTicketBody("Cannot login to my account",
 				"I have been trying to login since this morning and keep getting invalid credentials.",
-				"MEDIUM");
+				"MEDIUM",
+				CUSTOMER_ID);
 	}
 
 	protected String extractId(ResultActions result) throws Exception {
