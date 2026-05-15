@@ -162,10 +162,6 @@ public class TicketController implements TicketApi {
             String xUserRole,
             String ticketId,
             TicketAssignRequest ticketAssignRequest) throws Exception {
-        if (!xUserId.equals(ticketAssignRequest.getAgentId())
-                && !xUserRole.equals("ADMIN"))
-            throw new ForbiddenException("agent cannot assign ticket to another agent");
-
         ticketService.assignTicket(ticketId, ticketAssignRequest.getAgentId());
 
         return status(HttpStatus.NO_CONTENT).build();
@@ -177,7 +173,12 @@ public class TicketController implements TicketApi {
             String xUserRole,
             String ticketId,
             TicketReopenRequest ticketReopenRequest) throws Exception {
-        return TicketApi.super.reopenTicket(xUserId, xUserRole, ticketId, ticketReopenRequest);
+        if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
+            ticketService.reopenTicket(ticketId, ticketReopenRequest.getReason());
+        else
+            ticketService.reopenTicket(xUserId, ticketId, ticketReopenRequest.getReason());
+
+        return status(HttpStatus.NO_CONTENT).build();
     }
 
     @Override
@@ -186,7 +187,11 @@ public class TicketController implements TicketApi {
             String xUserRole,
             String ticketId,
             TicketStatusUpdateRequest ticketStatusUpdateRequest) throws Exception {
-        return TicketApi.super.updateTicketStatus(xUserId, xUserRole, ticketId, ticketStatusUpdateRequest);
+        if (xUserRole.equals("ADMIN"))
+            ticketService.updateTicketStatus(ticketId, ticketStatusUpdateRequest.getStatus());
+        else
+            ticketService.updateTicketStatus(xUserId, xUserRole, ticketId, ticketStatusUpdateRequest.getStatus());
+        return status(HttpStatus.NO_CONTENT).build();
     }
 
     @Override
@@ -195,7 +200,8 @@ public class TicketController implements TicketApi {
             String xUserRole,
             String ticketId,
             TicketPriorityUpdateRequest ticketPriorityUpdateRequest) throws Exception {
-        return TicketApi.super.updateTicketPriority(xUserId, xUserRole, ticketId, ticketPriorityUpdateRequest);
+        ticketService.updateTicketPriority(xUserId, xUserRole, ticketId, ticketPriorityUpdateRequest.getPriority());
+        return status(HttpStatus.NO_CONTENT).build();
     }
 
     // ======================================================

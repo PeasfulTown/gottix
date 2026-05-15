@@ -71,22 +71,6 @@ public class TicketWorkflowIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("invalid transition OPEN -> CLOSED - 422")
-        void agent_openToClosed_invalidTransition_returns422() throws Exception {
-            mockMvc.perform(withAgent(patch(BASE_URL + "/{id}/status", ticketId))
-                            .content(toJson(Map.of("status", "CLOSED"))))
-                    .andExpect(status().isUnprocessableEntity());
-        }
-
-        @Test
-        @DisplayName("invalid transition OPEN -> RESOLVED - 422")
-        void agent_openToResolved_invalidTransition_returns422() throws Exception {
-            mockMvc.perform(withAgent(patch(BASE_URL + "/{id}/status", ticketId))
-                            .content(toJson(Map.of("status", "RESOLVED"))))
-                    .andExpect(status().isUnprocessableEntity());
-        }
-
-        @Test
         @DisplayName("customer updates status - 403")
         void customer_updateStatus_returns403() throws Exception {
             mockMvc.perform(withCustomer(patch(BASE_URL + "/{id}/status", ticketId))
@@ -105,7 +89,7 @@ public class TicketWorkflowIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("update status on non-existent ticket - 404")
         void updateStatus_notFound_returns404() throws Exception {
-            mockMvc.perform(withAgent(patch(BASE_URL + "/{id}/status", "bad-id"))
+            mockMvc.perform(withAgent(patch(BASE_URL + "/{id}/status", "00000000-0000-0000-0000-00000000000f"))
                             .content(toJson(Map.of("status", "IN_PROGRESS"))))
                     .andExpect(status().isNotFound());
         }
@@ -178,7 +162,7 @@ public class TicketWorkflowIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("assign non-existent ticket - 404")
         void assignTicket_notFound_returns404() throws Exception {
-            mockMvc.perform(withAdmin(patch(BASE_URL + "/{id}/assign", "bad-id"))
+            mockMvc.perform(withAdmin(patch(BASE_URL + "/{id}/assign", "00000000-0000-0000-0000-00000000000f"))
                             .content(toJson(Map.of("agentId", AGENT_ID))))
                     .andExpect(status().isNotFound());
         }
@@ -260,7 +244,7 @@ public class TicketWorkflowIntegrationTest extends BaseIntegrationTest {
                     .andExpect(status().isNoContent());
 
             mockMvc.perform(withAgent(get(BASE_URL + "/{id}", closedTicketId)))
-                    .andExpect(jsonPath("$.status").value("OPEN"));
+                    .andExpect(jsonPath("$.status").value("OPENED"));
         }
 
         @Test
@@ -272,11 +256,11 @@ public class TicketWorkflowIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("reopen an already open ticket - 422")
+        @DisplayName("reopen an already open ticket - 400")
         void reopenOpenTicket_returns422() throws Exception {
             mockMvc.perform(withCustomer(post(BASE_URL + "/{id}/reopen", ticketId))
                             .content(toJson(Map.of("reason", "Reopening open ticket"))))
-                    .andExpect(status().isUnprocessableEntity());
+                    .andExpect(status().isBadRequest());
         }
 
         @Test

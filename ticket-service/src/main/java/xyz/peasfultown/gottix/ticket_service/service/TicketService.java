@@ -1,5 +1,6 @@
 package xyz.peasfultown.gottix.ticket_service.service;
 
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import xyz.peasfultown.gottix.ticket_service.model.*;
 
@@ -37,6 +38,16 @@ public interface TicketService {
 
     void assignTicket(String ticketId, String agentId);
 
+    void reopenTicket(String ticketId, String reason);
+
+    void reopenTicket(String userId, String ticketId, String reason);
+
+    void updateTicketStatus(String ticketId, @Valid TicketStatus status);
+
+    void updateTicketStatus(String userId, String userRole, String ticketId, @Valid TicketStatus status);
+
+    void updateTicketPriority(String userId, String userRole, String ticketId, @Valid TicketPriority priority);
+
     // ======================================================
     // TICKET COMMENT
     // ======================================================
@@ -48,5 +59,5 @@ public interface TicketService {
     void deleteTicketComment(String ticketId, String commentId);
 
     void deleteTicketComment(String userId, String ticketId, String commentId);
-}
 
+}

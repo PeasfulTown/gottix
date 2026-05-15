@@ -573,15 +573,19 @@ components:
     # dynamic properties
     TicketCreateRequest:
       type: object
+      required: [ title, description, priority, customerId ]
       properties:
         title:
           type: string
+          minLength: 5
         description:
           type: string
+          minLength: 5
         priority:
           $ref: '#/components/schemas/TicketPriority'
         customerId:
           type: string
+          minLength: 10
 
     TicketUpdateRequest:
       type: object
@@ -601,12 +605,14 @@ components:
 
     TicketStatusUpdateRequest:
       type: object
+      required: [ status ]
       properties:
         status:
           $ref: '#/components/schemas/TicketStatus'
 
     TicketPriorityUpdateRequest:
       type: object
+      required: [ priority ]
       properties:
         priority:
           $ref: '#/components/schemas/TicketPriority'
@@ -619,12 +625,15 @@ components:
 
     CommentCreateRequest:
       type: object
+      required: [ body ]
       properties:
         body:
           type: string
+          minLength: 1
 
     CommentEditRequest:
       type: object
+      required: [ body ]
       properties:
         body:
           type: string

@@ -16,6 +16,7 @@ import xyz.peasfultown.gottix.ticket_service.entity.projection.TicketEntityIdsOn
 import xyz.peasfultown.gottix.ticket_service.entity.projection.TicketEntitySummaryProjection;
 import xyz.peasfultown.gottix.ticket_service.exception.CommentNotFoundException;
 import xyz.peasfultown.gottix.ticket_service.exception.ForbiddenException;
+import xyz.peasfultown.gottix.ticket_service.exception.TicketStatusUpdateException;
 import xyz.peasfultown.gottix.ticket_service.exception.TicketNotFoundException;
 import xyz.peasfultown.gottix.ticket_service.model.*;
 import xyz.peasfultown.gottix.ticket_service.repository.CommentRepository;
@@ -193,11 +194,106 @@ public class TicketServiceImpl implements TicketService {
         TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
 
-        te.setAssignedAgentId(UUID.fromString(agentId));
+        te.setAssignedAgentId(agentId == null ? null : UUID.fromString(agentId));
         ticketRepo.save(te);
     }
 
-    // ======================================================
+    @Override
+    public void reopenTicket(String ticketId, String reason) {
+        // TODO: save reason for reopening ticket
+        TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
+                .orElseThrow(() -> new TicketNotFoundException(ticketId));
+
+        if (te.getStatus() == TicketEntity.TicketStatus.OPENED)
+            throw new TicketStatusUpdateException("cannot reopen an already open ticket");
+        te.setStatus(TicketEntity.TicketStatus.OPENED);
+        ticketRepo.save(te);
+    }
+
+    @Override
+    public void reopenTicket(String userId, String ticketId, String reason) {
+        // TODO: save reason for reopening ticket
+        TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
+                .orElseThrow(() -> new TicketNotFoundException(ticketId));
+
+        if (te.getStatus() == TicketEntity.TicketStatus.OPENED)
+            throw new TicketStatusUpdateException("cannot reopen an already open ticket");
+
+        if (!userId.equals(te.getCustomerId().toString()))
+            throw new ForbiddenException("user not allowed to reopen ticket they don't own");
+
+        te.setStatus(TicketEntity.TicketStatus.OPENED);
+        ticketRepo.save(te);
+    }
+
+    @Override
+    public void updateTicketStatus(String ticketId, TicketStatus status) {
+        TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
+                .orElseThrow(() -> new TicketNotFoundException(ticketId));
+        if (te.getStatus() == TicketEntity.TicketStatus.CLOSED)
+            throw new TicketStatusUpdateException("cannot update status of closed ticket");
+
+        TicketEntity.TicketStatus newStatus = TicketEntity.TicketStatus.fromValue(status.getValue());
+
+        if (getTicketStatusHierarchy(newStatus) < getTicketStatusHierarchy(te.getStatus()))
+            throw new TicketStatusUpdateException(String.format(
+                    "cannot perform backward ticket status update: %s -> %s", te.getStatus(), newStatus
+            ));
+
+        te.setStatus(newStatus);
+        ticketRepo.save(te);
+    }
+
+    @Override
+    public void updateTicketStatus(String userId, String userRole, String ticketId, TicketStatus status) {
+        TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
+                .orElseThrow(() -> new TicketNotFoundException(ticketId));
+
+        if (!userId.equals(te.getCustomerId().toString()) && !userRole.equals("AGENT"))
+            throw new ForbiddenException("user cannot update status of a ticket they don't own");
+
+        if (te.getStatus() == TicketEntity.TicketStatus.CLOSED)
+            throw new TicketStatusUpdateException("cannot update status of a closed ticket");
+
+        if (te.getStatus() == TicketEntity.TicketStatus.RESOLVED)
+            throw new TicketStatusUpdateException("cannot update status of a resolved ticket");
+
+        TicketEntity.TicketStatus newStatus = TicketEntity.TicketStatus.fromValue(status.getValue());
+
+        if (newStatus == TicketEntity.TicketStatus.IN_PROGRESS && userRole.equals("CUSTOMER"))
+            throw new ForbiddenException("user cannot set ticket status as in progress");
+
+        if (getTicketStatusHierarchy(newStatus) < getTicketStatusHierarchy(te.getStatus()))
+            throw new TicketStatusUpdateException(String.format(
+                    "cannot perform backward ticket status update: %s -> %s", te.getStatus(), newStatus
+            ));
+
+        te.setStatus(newStatus);
+        ticketRepo.save(te);
+    }
+
+    private int getTicketStatusHierarchy(TicketEntity.TicketStatus status) {
+        switch (status) {
+            case OPENED -> { return 0; }
+            case IN_PROGRESS -> { return 1 ;}
+            case RESOLVED -> { return 2 ;}
+            case CLOSED -> { return 3 ;}
+        }
+        throw new IllegalArgumentException("unable to determine ticket status");
+    }
+
+    @Override
+    public void updateTicketPriority(String userId, String userRole, String ticketId, TicketPriority priority) {
+        TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
+                .orElseThrow(() -> new TicketNotFoundException(ticketId));
+
+        if (userRole.equals("CUSTOMER") && !userId.equals(te.getCustomerId().toString()))
+            throw new ForbiddenException("user not allowed to modify ticket they don't own");
+
+        te.setPriority(TicketEntity.TicketPriority.fromValue(priority.getValue()));
+        ticketRepo.save(te);
+    }
+// ======================================================
     // TICKET COMMENT
     // ======================================================
 

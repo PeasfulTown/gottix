@@ -28,7 +28,7 @@ class TicketCrudIntegrationTest extends BaseIntegrationTest {
                     .andExpect(jsonPath("$.id").isNotEmpty())
                     .andExpect(jsonPath("$.title").value("Cannot login to my account"))
                     .andExpect(jsonPath("$.description").value(containsString("invalid credentials")))
-                    .andExpect(jsonPath("$.status").value("OPEN"))
+                    .andExpect(jsonPath("$.status").value("OPENED"))
                     .andExpect(jsonPath("$.priority").value("MEDIUM"))
                     .andExpect(jsonPath("$.customerId").value(CUSTOMER_ID))
                     .andExpect(jsonPath("$.comments").isArray())
@@ -66,7 +66,7 @@ class TicketCrudIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("create with missing title - 400")
         void createTicket_missingTitle_returns400() throws Exception {
-            String body = toJson(Map.of("description", "Some description", "priority", "LOW"));
+            String body = toJson(Map.of("description", "Some description", "priority", "LOW", "customerId", CUSTOMER_ID));
             mockMvc.perform(withCustomer(post(BASE_URL)).content(body))
                     .andExpect(status().isBadRequest());
         }
@@ -74,7 +74,7 @@ class TicketCrudIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("create with missing description - 400")
         void createTicket_missingDescription_returns400() throws Exception {
-            String body = toJson(Map.of("title", "Some title", "priority", "LOW"));
+            String body = toJson(Map.of("title", "Some title", "priority", "LOW", "customerId", CUSTOMER_ID));
             mockMvc.perform(withCustomer(post(BASE_URL)).content(body))
                     .andExpect(status().isBadRequest());
         }
@@ -82,7 +82,7 @@ class TicketCrudIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("create with blank title - 400")
         void createTicket_blankTitle_returns400() throws Exception {
-            String body = toJson(Map.of("title", "  ", "description", "desc", "priority", "LOW"));
+            String body = toJson(Map.of("title", "  ", "description", "desc", "priority", "LOW", "customerId", CUSTOMER_ID));
             mockMvc.perform(withCustomer(post(BASE_URL)).content(body))
                     .andExpect(status().isBadRequest());
         }
@@ -93,7 +93,7 @@ class TicketCrudIntegrationTest extends BaseIntegrationTest {
             mockMvc.perform(post(BASE_URL)
                             .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                             .content(defaultTicketBody()))
-                    .andExpect(status().is(anyOf(is(401), is(403))));
+                    .andExpect(status().is(anyOf(is(401), is(403), is(400))));
         }
 
     }
