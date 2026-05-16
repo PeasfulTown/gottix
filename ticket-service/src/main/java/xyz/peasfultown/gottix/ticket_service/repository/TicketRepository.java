@@ -23,4 +23,9 @@ public interface TicketRepository extends JpaRepository<TicketEntity, UUID>,
             SELECT t FROM TicketEntity t WHERE t.customerId = :userId AND t.id = :ticketId
             """)
     Optional<TicketEntity> findByCustomerIdAndTicketId(UUID userId, UUID ticketId);
+
+    @Query("""
+            SELECT t FROM TicketEntity t LEFT JOIN FETCH t.comments c WHERE t.id = :ticketId ORDER BY c.createdAt DESC
+            """)
+    Optional<TicketEntity> findByIdPopulateComments(UUID ticketId);
 }

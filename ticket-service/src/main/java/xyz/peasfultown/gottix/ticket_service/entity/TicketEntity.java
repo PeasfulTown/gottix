@@ -50,7 +50,8 @@ public class TicketEntity extends BaseEntity {
     @OneToMany(
             mappedBy = "ticket",
             cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY
+            fetch = FetchType.LAZY,
+            orphanRemoval = true
     )
     @Builder.Default
     private List<CommentEntity> comments = new ArrayList<>();

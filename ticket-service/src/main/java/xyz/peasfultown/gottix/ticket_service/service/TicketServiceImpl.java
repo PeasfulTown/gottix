@@ -14,10 +14,7 @@ import xyz.peasfultown.gottix.ticket_service.entity.mapper.CommentMapper;
 import xyz.peasfultown.gottix.ticket_service.entity.mapper.TicketMapper;
 import xyz.peasfultown.gottix.ticket_service.entity.projection.TicketEntityIdsOnlyProjection;
 import xyz.peasfultown.gottix.ticket_service.entity.projection.TicketEntitySummaryProjection;
-import xyz.peasfultown.gottix.ticket_service.exception.CommentNotFoundException;
-import xyz.peasfultown.gottix.ticket_service.exception.ForbiddenException;
-import xyz.peasfultown.gottix.ticket_service.exception.TicketStatusUpdateException;
-import xyz.peasfultown.gottix.ticket_service.exception.TicketNotFoundException;
+import xyz.peasfultown.gottix.ticket_service.exception.*;
 import xyz.peasfultown.gottix.ticket_service.model.*;
 import xyz.peasfultown.gottix.ticket_service.repository.CommentRepository;
 import xyz.peasfultown.gottix.ticket_service.repository.TicketRepository;
@@ -64,7 +61,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public Ticket getTicket(String ticketId) {
-        TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
+        TicketEntity te = ticketRepo.findByIdPopulateComments(UUID.fromString(ticketId))
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
         return ticketMapper.toModel(te);
     }
@@ -298,13 +295,15 @@ public class TicketServiceImpl implements TicketService {
     // ======================================================
 
     @Override
-    public Comment addTicketComment(String ticketId, String userId, String body) {
+    public Comment addTicketComment(String ticketId, String userId, String userRole, String body) {
         TicketEntityIdsOnlyProjection teids = ticketRepo.findIdsOnlyById(UUID.fromString(ticketId))
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
 
-        if (!teids.getAssignedAgentId().toString().equals(userId)
-                || !teids.getCustomerId().toString().equals(userId))
+        if (!teids.getCustomerId().toString().equals(userId) && userRole.equals("CUSTOMER"))
             throw new ForbiddenException("user not allowed to comment on a ticket they do not own");
+
+        if (body == null || body.isBlank())
+            throw new EmptyCommentException("unable to create comment with empty body");
 
         TicketEntity te = ticketRepo.getReferenceById(UUID.fromString(ticketId));
 
@@ -317,6 +316,7 @@ public class TicketServiceImpl implements TicketService {
 
         try {
             ce = commentRepo.save(ce);
+            ce.getTicket().getComments().add(ce);
         } catch (DataIntegrityViolationException e) {
             throw new TicketNotFoundException(ticketId);
         }
@@ -327,6 +327,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public Comment editTicketComment(
             String userId,
+            String userRole,
             String ticketId,
             String commentId,
             String newCommentBody) {
@@ -334,12 +335,14 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new CommentNotFoundException(String.format(
                         "comment ID: %s not found for ticket ID: %s", commentId, ticketId
                 )));
-        if (!userId.equals(ce.getAuthorId().toString()))
+
+        if (!userId.equals(ce.getAuthorId().toString()) && !userRole.equals("ADMIN"))
             throw new ForbiddenException("user not allowed to edit comment they don't own");
 
-        if (newCommentBody != null && !newCommentBody.isBlank())
-            ce.setBody(newCommentBody);
+        if (newCommentBody == null || newCommentBody.isBlank())
+            throw new EmptyCommentException("unable to update comment with a blank body");
 
+        ce.setBody(newCommentBody);
         ce = commentRepo.save(ce);
 
         return commentMapper.toModel(ce);
@@ -353,6 +356,7 @@ public class TicketServiceImpl implements TicketService {
                 )));
 
         commentRepo.delete(ce);
+        ce.getTicket().getComments().remove(ce);
     }
 
     @Override
@@ -366,6 +370,7 @@ public class TicketServiceImpl implements TicketService {
             throw new ForbiddenException("user not allowed to delete comment they don't own");
 
         commentRepo.delete(ce);
+        ce.getTicket().getComments().remove(ce);
     }
 
 

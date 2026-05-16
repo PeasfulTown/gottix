@@ -144,9 +144,9 @@ public class TicketListViewIntegrationTest extends BaseIntegrationTest {
         void createAndAssignTickets() throws Exception {
             // Create 2 tickets and assign to AGENT
             String t1 = extractId(mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("Ticket assigned to agent", "Desc", "HIGH", CUSTOMER_ID))));
+                    .content(createTicketBody("Ticket assigned to agent", "Description", "HIGH", CUSTOMER_ID))));
             String t2 = extractId(mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("Another assigned ticket", "Desc", "LOW", CUSTOMER_ID))));
+                    .content(createTicketBody("Another assigned ticket", "Description", "LOW", CUSTOMER_ID))));
 
             mockMvc.perform(withAdmin(patch(BASE + "/{id}/assign", t1))
                     .content(toJson(Map.of("agentId", AGENT_ID))));
@@ -155,7 +155,7 @@ public class TicketListViewIntegrationTest extends BaseIntegrationTest {
 
             // Create 1 ticket assigned to AGENT_2 - should NOT appear for AGENT
             String t3 = extractId(mockMvc.perform(withCustomer(post(BASE))
-                    .content(createTicketBody("Agent 2 ticket", "Desc", "MEDIUM", CUSTOMER_ID))));
+                    .content(createTicketBody("Agent 2 ticket", "Description", "MEDIUM", CUSTOMER_ID))));
             mockMvc.perform(withAdmin(patch(BASE + "/{id}/assign", t3))
                     .content(toJson(Map.of("agentId", AGENT_ID_2))));
         }

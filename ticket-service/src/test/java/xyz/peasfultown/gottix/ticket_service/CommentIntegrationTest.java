@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("Comments")
+@Transactional
 public class CommentIntegrationTest extends BaseIntegrationTest {
 
     private static final String TICKETS = "/api/v1/tickets";
@@ -122,7 +124,7 @@ public class CommentIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("add comment to non-existent ticket - 404")
         void addComment_nonExistentTicket_returns404() throws Exception {
-            mockMvc.perform(withAgent(post(TICKETS + "/bad-id/comments"))
+            mockMvc.perform(withAgent(post(TICKETS + "/00000000-0000-0000-0000-00000000000f/comments"))
                             .content(commentBody("Comment on nothing")))
                     .andExpect(status().isNotFound());
         }
@@ -191,7 +193,7 @@ public class CommentIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("edit non-existent comment - 404")
         void editComment_notFound_returns404() throws Exception {
-            mockMvc.perform(withAgent(patch(commentsPath() + "/{cid}", "bad-comment-id"))
+            mockMvc.perform(withAgent(patch(commentsPath() + "/{cid}", "00000000-0000-0000-0000-00000000000f"))
                             .content(commentBody("Editing nothing")))
                     .andExpect(status().isNotFound());
         }
@@ -262,7 +264,7 @@ public class CommentIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("delete non-existent comment - 404")
         void deleteComment_notFound_returns404() throws Exception {
-            mockMvc.perform(withAdmin(delete(commentsPath() + "/{cid}", "bad-comment-id")))
+            mockMvc.perform(withAdmin(delete(commentsPath() + "/{cid}", "00000000-0000-0000-0000-00000000000f")))
                     .andExpect(status().isNotFound());
         }
     }

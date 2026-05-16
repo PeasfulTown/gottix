@@ -52,9 +52,9 @@ public interface TicketService {
     // TICKET COMMENT
     // ======================================================
 
-    Comment addTicketComment(String ticketId, String userId, String body);
+    Comment addTicketComment(String ticketId, String userId, String userRole, String body);
 
-    Comment editTicketComment(String userId, String ticketId, String commentId, String newCommentBody);
+    Comment editTicketComment(String userId, String userRole, String ticketId, String commentId, String newCommentBody);
 
     void deleteTicketComment(String ticketId, String commentId);
 

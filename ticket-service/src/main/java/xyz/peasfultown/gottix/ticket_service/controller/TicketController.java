@@ -1,5 +1,6 @@
 package xyz.peasfultown.gottix.ticket_service.controller;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -215,8 +216,8 @@ public class TicketController implements TicketApi {
             String xUserRole,
             String ticketId,
             CommentCreateRequest commentCreateRequest) throws Exception {
-        Comment newComment = ticketService.addTicketComment(ticketId, xUserId, commentCreateRequest.getBody());
-        return ok(newComment);
+        Comment newComment = ticketService.addTicketComment(ticketId, xUserId, xUserRole, commentCreateRequest.getBody());
+        return status(HttpStatus.CREATED).body(newComment);
     }
 
     @Override
@@ -227,7 +228,7 @@ public class TicketController implements TicketApi {
             String commentId,
             CommentEditRequest commentEditRequest) throws Exception {
 
-        return ok(ticketService.editTicketComment(xUserId, ticketId, commentId, commentEditRequest.getBody()));
+        return ok(ticketService.editTicketComment(xUserId, xUserRole, ticketId, commentId, commentEditRequest.getBody()));
     }
 
     @Override
@@ -238,8 +239,9 @@ public class TicketController implements TicketApi {
             String commentId) throws Exception {
         if (xUserRole.equals("ADMIN"))
             ticketService.deleteTicketComment(ticketId, commentId);
-
-        ticketService.deleteTicketComment(xUserId, ticketId, commentId);
+        else {
+            ticketService.deleteTicketComment(xUserId, ticketId, commentId);
+        }
         return status(HttpStatus.NO_CONTENT).build();
     }
 
