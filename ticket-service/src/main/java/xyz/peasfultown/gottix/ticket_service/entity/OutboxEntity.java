@@ -23,6 +23,16 @@ public class OutboxEntity extends BaseEntity {
     @Builder.Default
     private UUID id = UUID.randomUUID();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entity_type", columnDefinition = "outbox_entity_type", nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    private EntityType entityType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", columnDefinition = "outbox_event_type", nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    private EventType eventType;
+
     @Column(name = "payload", columnDefinition = "JSONB", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)
     private JsonNode payload;

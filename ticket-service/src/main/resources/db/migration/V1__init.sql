@@ -38,6 +38,20 @@ CREATE TABLE IF NOT EXISTS comment (
 
 DO $$
 BEGIN
+    CREATE TYPE outbox_entity_type AS ENUM('TICKET', 'COMMENT');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$
+BEGIN
+    CREATE TYPE outbox_event_type AS ENUM('CREATE', 'UPDATE', 'DELETE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$
+BEGIN
     CREATE TYPE outbox_status AS ENUM('PENDING', 'PROCESSED', 'FAILED');
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -45,6 +59,8 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS outbox (
     id          UUID PRIMARY KEY,
+    entity_type outbox_entity_type NOT NULL,
+    event_type  outbox_event_type NOT NULL,
     payload     JSONB NOT NULL,
     status      outbox_status NOT NULL DEFAULT 'PENDING',
     created_at  TIMESTAMPTZ NOT NULL,

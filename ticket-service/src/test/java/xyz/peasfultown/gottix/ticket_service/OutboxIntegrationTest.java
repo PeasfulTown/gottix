@@ -21,6 +21,7 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
 
     private static final String TICKETS_BASE_URL = "/api/v1/tickets";
     private static final String TICKETS_ID_PATH = "/api/v1/tickets/{ticketId}";
+    private static final String TICKETS_COMMENT_PATH = "/api/v1/tickets/{ticketId}/comments";
 
     @Autowired
     private OutboxRepository outboxRepo;
@@ -70,7 +71,7 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
         void admin_updateTicket_onSuccess_savesToOutbox() throws Exception {
             String id = extractId(mockMvc.perform(withAdmin(post(TICKETS_BASE_URL))
                     .content(defaultTicketBody())));
-            mockMvc.perform(withAdmin(patch(TICKETS_BASE_URL, id)
+            mockMvc.perform(withAdmin(patch(TICKETS_ID_PATH, id)
                     .content(toJson(Map.of("title", "New ticket title")))));
             assertThat(outboxRepo.findAll()).hasSize(2);
         }
@@ -80,7 +81,7 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
         void admin_deleteTicket_onSuccess_savesToOutbox() throws Exception {
             String id = extractId(mockMvc.perform(withAdmin(post(TICKETS_BASE_URL))
                     .content(defaultTicketBody())));
-            mockMvc.perform(withAdmin(delete(TICKETS_BASE_URL, id)
+            mockMvc.perform(withAdmin(delete(TICKETS_ID_PATH, id)
                     .content(toJson(Map.of("title", "New ticket title")))));
             assertThat(outboxRepo.findAll()).hasSize(2);
         }
@@ -90,11 +91,18 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
     @DisplayName("Ticket workflow")
     class TicketWorkflow {
         private String ticketId;
+        private String ticketId2;
 
         @BeforeEach
         void setup() throws Exception {
             ticketId = extractId(mockMvc.perform(withCustomer(post(TICKETS_BASE_URL)
                     .content(defaultTicketBody()))));
+
+            ticketId2 = extractId(mockMvc.perform(withCustomer2(post(TICKETS_BASE_URL))
+                    .content(createTicketBody("Customer 2 ticket",
+                            "Customer 2 ticket description",
+                            "LOW",
+                            CUSTOMER_ID_2))));
             outboxRepo.deleteAll(); // clear outbox
         }
 
@@ -145,7 +153,7 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("agent reopens ticket - 204 saves to outbox")
         void agent_reopenTicket_onSuccess_savesToOutbox() throws Exception {
-            mockMvc.perform(withAdmin(post(TICKETS_ID_PATH + "/status", ticketId)
+            mockMvc.perform(withAdmin(patch(TICKETS_ID_PATH + "/status", ticketId)
                     .content(toJson(Map.of("status", "CLOSED")))));
             mockMvc.perform(withAgent(post(TICKETS_ID_PATH + "/reopen", ticketId)
                     .content(toJson(Map.of("reason", "ticket reopen reason")))));
@@ -154,12 +162,12 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("agent reopens ticket - 404 don't save to outbox")
+        @DisplayName("agent reopens ticket - 400 don't save to outbox")
         void agent_reopenTicket_onFailure_notSaveToOutbox() throws Exception {
-            mockMvc.perform(withAgent(post(TICKETS_ID_PATH + "/reopen", ticketId)
+            mockMvc.perform(withAgent(patch(TICKETS_ID_PATH + "/reopen", ticketId)
                     .content(toJson(Map.of("reason", "ticket reopen reason")))));
 
-            assertThat(outboxRepo.findAll()).hasSize(1);
+            assertThat(outboxRepo.findAll()).hasSize(0);
         }
 
         // ============================================================
@@ -209,7 +217,7 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("admin reopens ticket - 204 saves to outbox")
         void admin_reopenTicket_onSuccess_savesToOutbox() throws Exception {
-            mockMvc.perform(withAdmin(post(TICKETS_ID_PATH + "/status", ticketId)
+            mockMvc.perform(withAdmin(patch(TICKETS_ID_PATH + "/status", ticketId)
                     .content(toJson(Map.of("status", "CLOSED")))));
             mockMvc.perform(withAdmin(post(TICKETS_ID_PATH + "/reopen", ticketId)));
 
@@ -219,9 +227,176 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("admin reopens ticket - 404 don't save to outbox")
         void admin_reopenTicket_onFailure_notSaveToOutbox() throws Exception {
-            mockMvc.perform(withAdmin(post(TICKETS_ID_PATH + "/reopen", ticketId)));
+            mockMvc.perform(withAdmin(patch(TICKETS_ID_PATH + "/reopen", ticketId)));
+
+            assertThat(outboxRepo.findAll()).hasSize(0);
+        }
+
+        // ============================================================
+        // COMMENTS ADD
+        // ============================================================
+
+        @Test
+        @DisplayName("customer adds comment on own post - 201 saves to outbox")
+        void customer_createsComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withCustomer(post(TICKETS_COMMENT_PATH, ticketId))
+                    .content(toJson(Map.of("body", "test comment from customer"))));
 
             assertThat(outboxRepo.findAll()).hasSize(1);
         }
+
+        @Test
+        @DisplayName("customer adds comment on other customer's ticket - 403 don't save to outbox")
+        void customer_createsComment_onFailure_noSaveToOutbox() throws Exception {
+            mockMvc.perform(withCustomer(post(TICKETS_COMMENT_PATH, ticketId2))
+                    .content(toJson(Map.of("body", "test comment from customer"))));
+
+            assertThat(outboxRepo.findAll()).hasSize(0);
+        }
+
+        @Test
+        @DisplayName("agent adds comment to ticket - 201 saves to outbox")
+        void agent_createsComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withAgent(post(TICKETS_COMMENT_PATH, ticketId))
+                    .content(toJson(Map.of("body", "test comment from agent"))));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("admin adds comment to ticket - 201 saves to outbox")
+        void admin_createsComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withAdmin(post(TICKETS_COMMENT_PATH, ticketId))
+                    .content(toJson(Map.of("body", "test comment from admin"))));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("Comments")
+    class Comments {
+        private static final String TICKETS_COMMENT_ID_PATH = TICKETS_COMMENT_PATH + "/{commentId}";
+
+        String ticketId;
+        String ticketId2;
+        String commentId;
+        String commentId2;
+        String agentCommentId;
+        String adminCommentId;
+
+        @BeforeEach
+        void setup() throws Exception {
+            ticketId = extractId(mockMvc.perform(withCustomer(post(TICKETS_BASE_URL))
+                    .content(defaultTicketBody())));
+            ticketId2 = extractId(mockMvc.perform(withCustomer2(post(TICKETS_BASE_URL))
+                    .content(createTicketBody("customer 2 ticket", "ticket 2 description", "MEDIUM", CUSTOMER_ID_2))));
+
+            commentId = extractId(mockMvc.perform(withCustomer(post(TICKETS_COMMENT_PATH, ticketId))
+                    .content(toJson(Map.of("body", "comment from customer")))));
+            commentId2 = extractId(mockMvc.perform(withCustomer2(post(TICKETS_COMMENT_PATH, ticketId2))
+                    .content(toJson(Map.of("body", "comment from customer 2")))));
+
+            agentCommentId = extractId(mockMvc.perform(withAgent(post(TICKETS_COMMENT_PATH, ticketId)
+                    .content(toJson(Map.of("body", "comment from agent"))))));
+            adminCommentId = extractId(mockMvc.perform(withAdmin(post(TICKETS_COMMENT_PATH, ticketId))
+                    .content(toJson(Map.of("body", "comment from admin")))));
+            outboxRepo.deleteAll();
+        }
+
+        @Test
+        @DisplayName("customer edits own comment - 204 saves to outbox")
+        void customer_editComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withCustomer(patch(TICKETS_COMMENT_ID_PATH, ticketId, commentId))
+                    .content(toJson(Map.of("body", "new comment body from customer"))));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("customer deletes own comment - 204 saves to outbox")
+        void customer_deleteComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withCustomer(delete(TICKETS_COMMENT_ID_PATH, ticketId, commentId)));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("customer edits other customer's comment - 403 don't save to outbox")
+        void customer_editComment_onFailure_noSaveToOutbox() throws Exception {
+            mockMvc.perform(withCustomer(patch(TICKETS_COMMENT_ID_PATH, ticketId2, commentId2))
+                    .content(toJson(Map.of("body", "new comment body from customer"))));
+
+            assertThat(outboxRepo.findAll()).hasSize(0);
+        }
+
+        @Test
+        @DisplayName("customer deletes other customer's comment - 403 don't save to outbox")
+        void customer_deleteComment_onFailure_noSaveToOutbox() throws Exception {
+            mockMvc.perform(withCustomer(delete(TICKETS_COMMENT_ID_PATH, ticketId2, commentId2)));
+
+            assertThat(outboxRepo.findAll()).hasSize(0);
+        }
+
+        @Test
+        @DisplayName("agent edits own comment - 204 saves to outbox")
+        void agent_editComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withAgent(patch(TICKETS_COMMENT_ID_PATH, ticketId, agentCommentId)
+                    .content(toJson(Map.of("body", "updated agent comment")))));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("agent deletes own comment - 204 saves to outbox")
+        void agent_deleteComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withAgent(delete(TICKETS_COMMENT_ID_PATH, ticketId, agentCommentId)));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("agent edits customer's comment - 403 don't save to outbox")
+        void agent_editComment_onFailure_noSaveToOutbox() throws Exception {
+            mockMvc.perform(withAgent(patch(TICKETS_COMMENT_ID_PATH, ticketId, commentId)
+                    .content(toJson(Map.of("body", "updated customer comment")))));
+
+            assertThat(outboxRepo.findAll()).hasSize(0);
+        }
+
+        @Test
+        @DisplayName("agent deletes customer's comment - 403 don't save to outbox")
+        void agent_deleteComment_onFailure_noSaveToOutbox() throws Exception {
+            mockMvc.perform(withAgent(delete(TICKETS_COMMENT_ID_PATH, ticketId, commentId)));
+
+            assertThat(outboxRepo.findAll()).hasSize(0);
+        }
+
+        @Test
+        @DisplayName("admin edits own comment - 204 save to outbox")
+        void admin_editComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withAdmin(patch(TICKETS_COMMENT_ID_PATH, ticketId, adminCommentId)
+                    .content(toJson(Map.of("body", "updated admin comment")))));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("admin edits customer's comment - 403 don't save to outbox")
+        void admin_editComment_onFailure_savesToOutbox() throws Exception {
+            mockMvc.perform(withAdmin(patch(TICKETS_COMMENT_ID_PATH, ticketId, commentId)
+                    .content(toJson(Map.of("body", "updated customer comment")))));
+
+            assertThat(outboxRepo.findAll()).hasSize(0);
+        }
+
+        @Test
+        @DisplayName("admin deletes customer's comment - 204 saves to outbox")
+        void admin_deleteComment_onSuccess_savesToOutbox() throws Exception {
+            mockMvc.perform(withAdmin(delete(TICKETS_COMMENT_ID_PATH, ticketId, commentId)));
+
+            assertThat(outboxRepo.findAll()).hasSize(1);
+        }
+
     }
 }
