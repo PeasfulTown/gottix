@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import xyz.peasfultown.gottix.ticket_service.entity.TicketEntity;
 import xyz.peasfultown.gottix.ticket_service.entity.projection.TicketEntityIdsOnlyProjection;
+import xyz.peasfultown.gottix.ticket_service.entity.projection.TicketOutboxProjection;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 

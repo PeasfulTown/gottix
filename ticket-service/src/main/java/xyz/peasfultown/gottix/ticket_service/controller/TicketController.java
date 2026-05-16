@@ -174,10 +174,17 @@ public class TicketController implements TicketApi {
             String xUserRole,
             String ticketId,
             TicketReopenRequest ticketReopenRequest) throws Exception {
-        if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
-            ticketService.reopenTicket(ticketId, ticketReopenRequest.getReason());
-        else
+        if (xUserRole.equals("CUSTOMER")
+                && (ticketReopenRequest == null
+                || ticketReopenRequest.getReason() == null
+                || ticketReopenRequest.getReason().isBlank()))
+            throw new ForbiddenException("user not allowed to reopen ticket without a reason");
+
+        if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT")) {
+            ticketService.reopenTicket(ticketId, ticketReopenRequest == null ? null : ticketReopenRequest.getReason());
+        } else {
             ticketService.reopenTicket(xUserId, ticketId, ticketReopenRequest.getReason());
+        }
 
         return status(HttpStatus.NO_CONTENT).build();
     }

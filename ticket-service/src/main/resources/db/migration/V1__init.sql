@@ -35,3 +35,42 @@ CREATE TABLE IF NOT EXISTS comment (
     CONSTRAINT fk_comment_ticket_id FOREIGN KEY (ticket_id)
         REFERENCES ticket (id)
 );
+
+DO $$
+BEGIN
+    CREATE TYPE outbox_entity_type AS ENUM('TICKET', 'COMMENT');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$
+BEGIN
+    CREATE TYPE outbox_event_type AS ENUM('CREATE', 'UPDATE', 'DELETE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$
+BEGIN
+    CREATE TYPE outbox_status AS ENUM('PENDING', 'PROCESSED', 'FAILED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS outbox (
+    id          UUID PRIMARY KEY,
+    entity_type outbox_entity_type NOT NULL,
+    event_type  outbox_event_type NOT NULL,
+    payload     JSONB NOT NULL,
+    status      outbox_status NOT NULL DEFAULT 'PENDING',
+    created_at  TIMESTAMPTZ NOT NULL,
+    updated_at  TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX idx_outbox_ticket_status_pending
+ON outbox (entity_type, status, created_at ASC)
+WHERE entity_type = 'TICKET' AND status = 'PENDING';
+
+CREATE INDEX idx_outbox_comment_status_pending
+ON outbox (entity_type, status, created_at ASC)
+WHERE entity_type = 'COMMENT' AND status = 'PENDING';

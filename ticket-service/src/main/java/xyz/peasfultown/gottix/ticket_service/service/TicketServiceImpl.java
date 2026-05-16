@@ -1,6 +1,7 @@
 package xyz.peasfultown.gottix.ticket_service.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.peasfultown.gottix.ticket_service.entity.CommentEntity;
+import xyz.peasfultown.gottix.ticket_service.entity.EventType;
 import xyz.peasfultown.gottix.ticket_service.entity.TicketEntity;
 import xyz.peasfultown.gottix.ticket_service.entity.mapper.CommentMapper;
 import xyz.peasfultown.gottix.ticket_service.entity.mapper.TicketMapper;
@@ -23,12 +25,16 @@ import java.util.UUID;
 
 import static xyz.peasfultown.gottix.ticket_service.repository.specification.TicketSpecification.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepo;
     private final CommentRepository commentRepo;
+
+    private final OutboxService outboxService;
+
     private final TicketMapper ticketMapper;
     private final CommentMapper commentMapper;
 
@@ -131,15 +137,17 @@ public class TicketServiceImpl implements TicketService {
     // ======================================================
 
     @Override
-    public Ticket createTicket(
-            TicketCreateRequest req) {
+    public Ticket createTicket(TicketCreateRequest req) {
         TicketEntity te = TicketEntity.builder()
                 .title(req.getTitle())
                 .description(req.getDescription())
                 .priority(TicketEntity.TicketPriority.fromValue(req.getPriority().getValue()))
                 .customerId(UUID.fromString(req.getCustomerId()))
                 .build();
+
         te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.CREATE);
+
         return ticketMapper.toModel(te);
     }
 
@@ -162,13 +170,18 @@ public class TicketServiceImpl implements TicketService {
             te.setDescription(req.getDescription());
         if (req.getPriority() != null)
             te.setPriority(TicketEntity.TicketPriority.fromValue(req.getPriority().getValue()));
+
         te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
+
         return ticketMapper.toModelSummary(te);
     }
 
     @Override
     public void deleteTicket(String ticketId) {
-        ticketRepo.deleteById(UUID.fromString(ticketId));
+        UUID id = UUID.fromString(ticketId);
+        outboxService.saveTicketToOutbox(ticketRepo.getReferenceById(id), EventType.DELETE);
+        ticketRepo.deleteById(id);
     }
 
     @Override
@@ -179,6 +192,7 @@ public class TicketServiceImpl implements TicketService {
         if (!teids.getCustomerId().toString().equals(userId))
             throw new ForbiddenException("user not allowed to delete ticket they don't own");
 
+        outboxService.saveTicketToOutbox(ticketRepo.getReferenceById(UUID.fromString(ticketId)), EventType.DELETE);
         ticketRepo.deleteById(UUID.fromString(ticketId));
     }
 
@@ -190,9 +204,9 @@ public class TicketServiceImpl implements TicketService {
     public void assignTicket(String ticketId, String agentId) {
         TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
-
         te.setAssignedAgentId(agentId == null ? null : UUID.fromString(agentId));
         ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
     }
 
     @Override
@@ -204,7 +218,8 @@ public class TicketServiceImpl implements TicketService {
         if (te.getStatus() == TicketEntity.TicketStatus.OPENED)
             throw new TicketStatusUpdateException("cannot reopen an already open ticket");
         te.setStatus(TicketEntity.TicketStatus.OPENED);
-        ticketRepo.save(te);
+        te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
     }
 
     @Override
@@ -220,7 +235,8 @@ public class TicketServiceImpl implements TicketService {
             throw new ForbiddenException("user not allowed to reopen ticket they don't own");
 
         te.setStatus(TicketEntity.TicketStatus.OPENED);
-        ticketRepo.save(te);
+        te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
     }
 
     @Override
@@ -238,7 +254,8 @@ public class TicketServiceImpl implements TicketService {
             ));
 
         te.setStatus(newStatus);
-        ticketRepo.save(te);
+        te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
     }
 
     @Override
@@ -266,7 +283,8 @@ public class TicketServiceImpl implements TicketService {
             ));
 
         te.setStatus(newStatus);
-        ticketRepo.save(te);
+        te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
     }
 
     private int getTicketStatusHierarchy(TicketEntity.TicketStatus status) {
@@ -288,9 +306,11 @@ public class TicketServiceImpl implements TicketService {
             throw new ForbiddenException("user not allowed to modify ticket they don't own");
 
         te.setPriority(TicketEntity.TicketPriority.fromValue(priority.getValue()));
-        ticketRepo.save(te);
+        te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
     }
-// ======================================================
+
+    // ======================================================
     // TICKET COMMENT
     // ======================================================
 
@@ -317,6 +337,7 @@ public class TicketServiceImpl implements TicketService {
         try {
             ce = commentRepo.save(ce);
             ce.getTicket().getComments().add(ce);
+            outboxService.saveCommentToOutbox(ce, EventType.CREATE);
         } catch (DataIntegrityViolationException e) {
             throw new TicketNotFoundException(ticketId);
         }
@@ -336,7 +357,7 @@ public class TicketServiceImpl implements TicketService {
                         "comment ID: %s not found for ticket ID: %s", commentId, ticketId
                 )));
 
-        if (!userId.equals(ce.getAuthorId().toString()) && !userRole.equals("ADMIN"))
+        if (!userId.equals(ce.getAuthorId().toString()))
             throw new ForbiddenException("user not allowed to edit comment they don't own");
 
         if (newCommentBody == null || newCommentBody.isBlank())
@@ -344,7 +365,7 @@ public class TicketServiceImpl implements TicketService {
 
         ce.setBody(newCommentBody);
         ce = commentRepo.save(ce);
-
+        outboxService.saveCommentToOutbox(ce, EventType.UPDATE);
         return commentMapper.toModel(ce);
     }
 
@@ -355,6 +376,7 @@ public class TicketServiceImpl implements TicketService {
                         "comment ID: %s not found for ticket ID: %s", commentId, ticketId
                 )));
 
+        outboxService.saveCommentToOutbox(ce, EventType.UPDATE);
         commentRepo.delete(ce);
         ce.getTicket().getComments().remove(ce);
     }
@@ -369,6 +391,7 @@ public class TicketServiceImpl implements TicketService {
         if (!ce.getAuthorId().toString().equals(userId))
             throw new ForbiddenException("user not allowed to delete comment they don't own");
 
+        outboxService.saveCommentToOutbox(ce, EventType.UPDATE);
         commentRepo.delete(ce);
         ce.getTicket().getComments().remove(ce);
     }
