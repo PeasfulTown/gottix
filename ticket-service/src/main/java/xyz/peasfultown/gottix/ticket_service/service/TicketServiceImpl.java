@@ -1,6 +1,7 @@
 package xyz.peasfultown.gottix.ticket_service.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,12 +24,16 @@ import java.util.UUID;
 
 import static xyz.peasfultown.gottix.ticket_service.repository.specification.TicketSpecification.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepo;
     private final CommentRepository commentRepo;
+
+    private final OutboxService outboxService;
+
     private final TicketMapper ticketMapper;
     private final CommentMapper commentMapper;
 
@@ -131,15 +136,21 @@ public class TicketServiceImpl implements TicketService {
     // ======================================================
 
     @Override
-    public Ticket createTicket(
-            TicketCreateRequest req) {
+    public Ticket createTicket(TicketCreateRequest req) {
         TicketEntity te = TicketEntity.builder()
                 .title(req.getTitle())
                 .description(req.getDescription())
                 .priority(TicketEntity.TicketPriority.fromValue(req.getPriority().getValue()))
                 .customerId(UUID.fromString(req.getCustomerId()))
                 .build();
-        te = ticketRepo.save(te);
+
+        try {
+            te = ticketRepo.save(te);
+            outboxService.saveTicketToOutbox(te);
+        } catch (Exception e) {
+            log.error("unable to save ticket", e);
+        }
+
         return ticketMapper.toModel(te);
     }
 
@@ -190,7 +201,6 @@ public class TicketServiceImpl implements TicketService {
     public void assignTicket(String ticketId, String agentId) {
         TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
-
         te.setAssignedAgentId(agentId == null ? null : UUID.fromString(agentId));
         ticketRepo.save(te);
     }
@@ -290,7 +300,8 @@ public class TicketServiceImpl implements TicketService {
         te.setPriority(TicketEntity.TicketPriority.fromValue(priority.getValue()));
         ticketRepo.save(te);
     }
-// ======================================================
+
+    // ======================================================
     // TICKET COMMENT
     // ======================================================
 
