@@ -2,10 +2,10 @@ package xyz.peasfultown.gottix.auth_service.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.peasfultown.ecommerce.auth_service.UserApi;
-import xyz.peasfultown.ecommerce.auth_service.model.PagedUserResponse;
-import xyz.peasfultown.ecommerce.auth_service.model.User;
-import xyz.peasfultown.ecommerce.auth_service.model.UserUpdateRequest;
+import xyz.peasfultown.gottix.auth_service.UserApi;
+import xyz.peasfultown.gottix.auth_service.model.PagedUserResponse;
+import xyz.peasfultown.gottix.auth_service.model.User;
+import xyz.peasfultown.gottix.auth_service.model.UserUpdateRequest;
 
 @RestController
 public class UserController implements UserApi {

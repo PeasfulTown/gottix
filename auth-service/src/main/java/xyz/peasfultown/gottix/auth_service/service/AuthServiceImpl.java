@@ -3,19 +3,15 @@ package xyz.peasfultown.gottix.auth_service.service;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import xyz.peasfultown.ecommerce.auth_service.model.LoginRequest;
-import xyz.peasfultown.ecommerce.auth_service.model.RefreshToken;
-import xyz.peasfultown.ecommerce.auth_service.model.RegisterRequest;
-import xyz.peasfultown.ecommerce.auth_service.model.Token;
+import xyz.peasfultown.gottix.auth_service.exception.*;
+import xyz.peasfultown.gottix.auth_service.model.LoginRequest;
+import xyz.peasfultown.gottix.auth_service.model.RefreshToken;
+import xyz.peasfultown.gottix.auth_service.model.RegisterRequest;
+import xyz.peasfultown.gottix.auth_service.model.Token;
 import xyz.peasfultown.gottix.auth_service.entity.RefreshTokenEntity;
 import xyz.peasfultown.gottix.auth_service.entity.UserEntity;
-import xyz.peasfultown.gottix.auth_service.exception.UnauthorizedException;
-import xyz.peasfultown.gottix.auth_service.exception.UseOfInvalidTokenException;
-import xyz.peasfultown.gottix.auth_service.exception.UserAlreadyExistsException;
-import xyz.peasfultown.gottix.auth_service.exception.UserNotFoundException;
 import xyz.peasfultown.gottix.auth_service.repository.RefreshTokenRepository;
 import xyz.peasfultown.gottix.auth_service.repository.UserRepository;
 import xyz.peasfultown.gottix.auth_service.utils.JwtUtil;
@@ -87,11 +83,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Token getNewAccessToken(RefreshToken refreshToken) {
         RefreshTokenEntity rte = refreshTokenRepository.findByToken(UUID.fromString(refreshToken.getToken()))
-                .orElseThrow(() -> new UseOfInvalidTokenException(String.format(
+                .orElseThrow(() -> new InvalidTokenException(String.format(
                         "refresh token not found by token: %s", refreshToken.getToken()
                 )));
         if (rte.isRevoked() || rte.getExpiresAt().isBefore(Instant.now()))
-            throw new UseOfInvalidTokenException("use of invalid refresh token (already revoked or expired)");
+            throw new InvalidTokenException("use of invalid refresh token (already revoked or expired)");
         rte.setRevoked(true);
         refreshTokenRepository.save(rte);
         return createTokens(rte.getUser());

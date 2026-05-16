@@ -1,6 +1,5 @@
-package xyz.peasfultown.gottix.auth_service.exception;
+package xyz.peasfultown.gottix.ticket_service.exception;
 
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,6 +19,5 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
         problem.setTitle(exception.getErrorCode());
         return status(problem.getStatus()).body(problem);
-}
-
+    }
 }

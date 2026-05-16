@@ -4,11 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.peasfultown.ecommerce.auth_service.AuthApi;
-import xyz.peasfultown.ecommerce.auth_service.model.LoginRequest;
-import xyz.peasfultown.ecommerce.auth_service.model.RefreshToken;
-import xyz.peasfultown.ecommerce.auth_service.model.RegisterRequest;
-import xyz.peasfultown.ecommerce.auth_service.model.Token;
+import xyz.peasfultown.gottix.auth_service.AuthApi;
+import xyz.peasfultown.gottix.auth_service.model.LoginRequest;
+import xyz.peasfultown.gottix.auth_service.model.RefreshToken;
+import xyz.peasfultown.gottix.auth_service.model.RegisterRequest;
+import xyz.peasfultown.gottix.auth_service.model.Token;
 import xyz.peasfultown.gottix.auth_service.service.AuthService;
 
 import static org.springframework.http.ResponseEntity.ok;

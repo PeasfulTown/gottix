@@ -1,9 +1,9 @@
 package xyz.peasfultown.gottix.auth_service.service;
 
-import xyz.peasfultown.ecommerce.auth_service.model.LoginRequest;
-import xyz.peasfultown.ecommerce.auth_service.model.RefreshToken;
-import xyz.peasfultown.ecommerce.auth_service.model.RegisterRequest;
-import xyz.peasfultown.ecommerce.auth_service.model.Token;
+import xyz.peasfultown.gottix.auth_service.model.LoginRequest;
+import xyz.peasfultown.gottix.auth_service.model.RefreshToken;
+import xyz.peasfultown.gottix.auth_service.model.RegisterRequest;
+import xyz.peasfultown.gottix.auth_service.model.Token;
 
 public interface AuthService {
     Token login(LoginRequest loginRequest);
