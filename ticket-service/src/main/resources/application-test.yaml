@@ -16,6 +16,16 @@ spring:
   rabbitmq:
     virtual-host: gottix-test
 
+rabbitmq:
+  exchange:
+    main: main
+  queue:
+    ticket-change: ticket-change
+    ticket-comment-change: ticket-comment-change
+  routing-key:
+    ticket-change: ticket-change
+    ticket-comment-change: ticket-comment-change
+
 eureka:
   client:
     enabled: false
