@@ -34,6 +34,23 @@ spring:
       write-dates-as-timestamps: false
     time-zone: UTC
 
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: user
+    password: password
+    virtual-host: gottix
+
+rabbitmq:
+  exchange:
+    main: main
+  queue:
+    ticket-change: ticket.change
+    ticket-comment-change: ticket-comment-change
+  routing-key:
+    ticket-change: ticket.change
+    ticket-comment-change: ticket-comment-change
+
 security:
   oauth2:
     resourceserver:

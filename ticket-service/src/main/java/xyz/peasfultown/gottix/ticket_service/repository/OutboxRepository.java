@@ -29,4 +29,13 @@ public interface OutboxRepository extends JpaRepository<OutboxEntity, UUID> {
             LIMIT :batchSize
             """, nativeQuery = true)
     List<OutboxEntity> findOldestPendingComments(int batchSize);
+
+    @Query(value = """
+            SELECT * FROM outbox
+            WHERE status = 'PROCESSED'
+            ORDER BY updated_at ASC
+            FOR UPDATE SKIP LOCKED
+            LIMIT :batchSize
+            """, nativeQuery = true)
+    List<OutboxEntity> findAllProcessed(int batchSize);
 }

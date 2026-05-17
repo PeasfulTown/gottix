@@ -1,12 +1,10 @@
 package xyz.peasfultown.gottix.ticket_service.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.amqp.RabbitTemplateConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -54,8 +52,10 @@ public class RabbitMqConfig {
     // ============================================================
 
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+    public RabbitTemplate rabbitTemplate(RabbitTemplateConfigurer configurer, ConnectionFactory connectionFactory, TopicExchange exchange) {
+        RabbitTemplate rabbitTemplate = new RabbitTemplate();
+        configurer.configure(rabbitTemplate, connectionFactory);
+        rabbitTemplate.setExchange(exchange.getName());
         rabbitTemplate.setChannelTransacted(true);
         return rabbitTemplate;
     }
