@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class OutboxTicket {
+public class TicketChangeEvent {
     private String id;
     private String title;
     private String description;

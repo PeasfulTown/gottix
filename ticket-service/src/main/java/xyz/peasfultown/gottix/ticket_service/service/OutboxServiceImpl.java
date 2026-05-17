@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.peasfultown.gottix.ticket_service.config.RabbitMqConfig;
-import xyz.peasfultown.gottix.ticket_service.dto.OutboxComment;
-import xyz.peasfultown.gottix.ticket_service.dto.OutboxTicket;
+import xyz.peasfultown.gottix.ticket_service.dto.CommentChangeEvent;
+import xyz.peasfultown.gottix.ticket_service.dto.TicketChangeEvent;
 import xyz.peasfultown.gottix.ticket_service.entity.*;
 import xyz.peasfultown.gottix.ticket_service.repository.OutboxRepository;
 
@@ -44,7 +44,7 @@ public class OutboxServiceImpl implements OutboxService {
 
     @Override
     public void saveTicketToOutbox(TicketEntity te, EventType type) {
-        OutboxTicket ot = OutboxTicket.builder()
+        TicketChangeEvent ot = TicketChangeEvent.builder()
                 .id(te.getId().toString())
                 .title(te.getTitle() == null ? null : te.getTitle())
                 .description(te.getDescription() == null ? null : te.getDescription())
@@ -66,7 +66,7 @@ public class OutboxServiceImpl implements OutboxService {
 
     @Override
     public void saveCommentToOutbox(CommentEntity ce, EventType type) {
-        OutboxComment oc = OutboxComment.builder()
+        CommentChangeEvent oc = CommentChangeEvent.builder()
                 .id(ce.getId().toString())
                 .body(ce.getBody())
                 .authorId(ce.getAuthorId().toString())

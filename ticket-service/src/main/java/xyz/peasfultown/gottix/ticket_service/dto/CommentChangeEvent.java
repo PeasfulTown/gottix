@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class OutboxComment {
+public class CommentChangeEvent {
     private String id;
     private String body;
     private String authorId;
