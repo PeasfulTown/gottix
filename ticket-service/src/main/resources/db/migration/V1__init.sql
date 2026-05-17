@@ -74,3 +74,7 @@ WHERE entity_type = 'TICKET' AND status = 'PENDING';
 CREATE INDEX idx_outbox_comment_status_pending
 ON outbox (entity_type, status, created_at ASC)
 WHERE entity_type = 'COMMENT' AND status = 'PENDING';
+
+CREATE INDEX idx_outbox_processed
+ON outbox (status, updated_at ASC)
+WHERE status = 'PROCESSED';

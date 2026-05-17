@@ -8,8 +8,10 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.peasfultown.gottix.ticket_service.config.RabbitMqConfig;
 import xyz.peasfultown.gottix.ticket_service.entity.OutboxEntity;
 import xyz.peasfultown.gottix.ticket_service.entity.OutboxStatus;
@@ -20,6 +22,8 @@ import java.util.List;
 
 @Slf4j
 @Component
+@EnableScheduling
+@Transactional
 @RequiredArgsConstructor
 public class OutboxScheduledPoller {
     private static final String TYPE_ID_HEADER = "__TypeId__";
@@ -61,6 +65,9 @@ public class OutboxScheduledPoller {
     public void sendOutboxPendingComments() {
         List<OutboxEntity> comments = outboxRepo.findOldestPendingComments(10);
 
+        if (comments.isEmpty())
+            return;
+
         for (OutboxEntity oe : comments) {
             try {
                 Message m = MessageBuilder.withBody(objMapper.writeValueAsBytes(oe.getPayload()))
@@ -77,5 +84,19 @@ public class OutboxScheduledPoller {
                 throw new RuntimeException("unable to send ticket comment change event", e);
             }
         }
+    }
+
+    @Scheduled(
+            initialDelay = 10000,
+            fixedDelay = 10000
+    )
+    public void cleanProcessedEntities() {
+        List<OutboxEntity> entities = outboxRepo.findAllProcessed(10);
+
+        if (entities.isEmpty())
+            return;
+
+        log.info("cleaning up processed outbox entities");
+        outboxRepo.deleteAll(entities);
     }
 }
