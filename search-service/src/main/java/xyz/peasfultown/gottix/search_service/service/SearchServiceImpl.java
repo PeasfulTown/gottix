@@ -97,7 +97,20 @@ public class SearchServiceImpl implements SearchService {
                                 .match(mt -> mt
                                         .field("title")
                                         .query(queryText)
-                                        .fuzziness("AUTO")))));
+                                        .fuzziness("AUTO")))
+                        .should(s -> s
+                                .match(mt -> mt
+                                        .field("description")
+                                        .query(queryText)
+                                        .fuzziness("AUTO")))
+                        .should(s -> s
+                                .nested(n -> n
+                                        .path("comments")
+                                        .query(neq -> neq
+                                                .match(ma -> ma
+                                                        .field("comments.body")
+                                                        .query(queryText)))))
+                ));
     }
 
     private void withStatus(NativeQueryBuilder nq, xyz.peasfultown.gottix.search_service.model.TicketStatus status) {
