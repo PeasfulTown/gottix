@@ -14,9 +14,6 @@ import xyz.peasfultown.gottix.search_service.service.SearchService;
 @Component
 @RequiredArgsConstructor
 public class TicketChangeEventListener {
-    private static final String TYPE_ID_HEADER = "__TypeId__";
-
-    private final RabbitTemplate rabbitTemplate;
     private final SearchService service;
 
     @RabbitListener(

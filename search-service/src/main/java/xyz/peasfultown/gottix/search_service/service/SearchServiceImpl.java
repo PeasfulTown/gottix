@@ -89,6 +89,7 @@ public class SearchServiceImpl implements SearchService {
     // QUERY BUILDER
     // ============================================================
 
+    /* full text search matches title, description, and comment bodies */
     private void withFullTextSearch(NativeQueryBuilder nq, String queryText) {
         nq.withQuery(q -> q
                 .bool(b -> b
