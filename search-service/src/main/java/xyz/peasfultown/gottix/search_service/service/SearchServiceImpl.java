@@ -12,9 +12,12 @@ import org.springframework.data.elasticsearch.core.SearchHitSupport;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.SearchPage;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.ScriptType;
 import org.springframework.data.elasticsearch.core.query.UpdateQuery;
 import org.springframework.stereotype.Service;
+import xyz.peasfultown.gottix.search_service.dto.CommentChangeEvent;
 import xyz.peasfultown.gottix.search_service.dto.TicketChangeEvent;
+import xyz.peasfultown.gottix.search_service.entity.CommentDocument;
 import xyz.peasfultown.gottix.search_service.entity.TicketDocument;
 import xyz.peasfultown.gottix.search_service.entity.TicketPriority;
 import xyz.peasfultown.gottix.search_service.entity.TicketStatus;
@@ -24,6 +27,8 @@ import xyz.peasfultown.gottix.search_service.model.ResponsePage;
 import xyz.peasfultown.gottix.search_service.model.SortField;
 import xyz.peasfultown.gottix.search_service.model.SortOrder;
 import xyz.peasfultown.gottix.search_service.repository.TicketRepository;
+
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -169,6 +174,77 @@ public class SearchServiceImpl implements SearchService {
         } catch (Exception e) {
             log.error("unable to delete document {}", event.getId(), e);
         }
+    }
+
+    @Override
+    public void indexCommentCreateEvent(CommentChangeEvent event) {
+        CommentDocument cd = CommentDocument.builder()
+                .id(event.getId())
+                .body(event.getBody())
+                .authorId(event.getAuthorId())
+                .build();
+
+        Map<String, Object> params = Map.of("comment", ops.getElasticsearchConverter().mapObject(cd));
+
+        String updateScript = """
+                if (ctx._source.comments == null) {
+                    ctx._source.comments = [];
+                }
+                ctx._source.comments.add(params.comment);
+                """;
+
+        UpdateQuery uq = UpdateQuery.builder(event.getTicketId())
+                .withScriptType(ScriptType.INLINE)
+                .withScript(updateScript)
+                .withParams(params)
+                .build();
+
+        ops.update(uq, IndexCoordinates.of("tickets"));
+    }
+
+    @Override
+    public void indexCommentUpdateEvent(CommentChangeEvent event) {
+        String updateScript = """
+                for (item in ctx._source.comments) {
+                    if (item.id == params.id) {
+                        item.body = params.body;
+                    }
+                }
+                """;
+
+        Map<String, Object> params = Map.of(
+                "id", event.getId(),
+                "body", event.getBody()
+        );
+
+        UpdateQuery uq = UpdateQuery.builder(event.getTicketId())
+                .withScriptType(ScriptType.INLINE)
+                .withScript(updateScript)
+                .withParams(params)
+                .build();
+
+        ops.update(uq, IndexCoordinates.of("tickets"));
+    }
+
+    @Override
+    public void indexCommentDeleteEvent(CommentChangeEvent event) {
+        String deleteScript = """
+                if (ctx._source.comments != null) {
+                    ctx._source.comments.removeIf(item -> item.id == params.commentId);
+                }
+                """;
+
+        Map<String, Object> params = Map.of(
+                "commentId", event.getId()
+        );
+
+        UpdateQuery uq = UpdateQuery.builder(event.getTicketId())
+                .withScriptType(ScriptType.INLINE)
+                .withScript(deleteScript)
+                .withParams(params)
+                .build();
+
+        ops.update(uq, IndexCoordinates.of("tickets"));
     }
 
     // ============================================================
