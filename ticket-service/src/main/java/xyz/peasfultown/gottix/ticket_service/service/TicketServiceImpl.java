@@ -1,5 +1,6 @@
 package xyz.peasfultown.gottix.ticket_service.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -50,12 +51,17 @@ public class TicketServiceImpl implements TicketService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
+        String sortField = switch (sortBy) {
+            case CREATED_AT ->  "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 sortOrder == SortOrder.DESC
-                        ? Sort.by(sortBy.getValue()).descending()
-                        : Sort.by(sortBy.getValue()).ascending()
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
         );
 
         return ticketRepo.findBy(
@@ -91,12 +97,17 @@ public class TicketServiceImpl implements TicketService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
+        String sortField = switch (sortBy) {
+            case CREATED_AT ->  "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 sortOrder == SortOrder.DESC
-                        ? Sort.by(sortBy.getValue()).descending()
-                        : Sort.by(sortBy.getValue()).ascending()
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
         );
 
         return ticketRepo.findBy(
@@ -116,12 +127,17 @@ public class TicketServiceImpl implements TicketService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
+        String sortField = switch (sortBy) {
+            case CREATED_AT ->  "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 sortOrder == SortOrder.DESC
-                        ? Sort.by(sortBy.getValue()).descending()
-                        : Sort.by(sortBy.getValue()).ascending()
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
         );
 
         return ticketRepo.findBy(
@@ -179,9 +195,14 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public void deleteTicket(String ticketId) {
-        UUID id = UUID.fromString(ticketId);
-        outboxService.saveTicketToOutbox(ticketRepo.getReferenceById(id), EventType.DELETE);
-        ticketRepo.deleteById(id);
+        try {
+            outboxService.saveTicketToOutbox(ticketRepo.getReferenceById(UUID.fromString(ticketId)), EventType.DELETE);
+            ticketRepo.deleteById(UUID.fromString(ticketId));
+        } catch (
+                EntityNotFoundException e) {
+            log.error("unable to delete document id {}", ticketId, e);
+            throw new TicketNotFoundException(ticketId);
+        }
     }
 
     @Override

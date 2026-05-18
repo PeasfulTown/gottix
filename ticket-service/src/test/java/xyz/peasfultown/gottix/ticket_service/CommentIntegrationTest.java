@@ -158,12 +158,11 @@ public class CommentIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("admin edits any comment - 200")
-        void admin_editAnyComment_returns200() throws Exception {
+        @DisplayName("admin edits any comment - 403")
+        void admin_editAnyComment_returns403() throws Exception {
             mockMvc.perform(withAdmin(patch(commentsPath() + "/{cid}", commentId))
                             .content(commentBody("Admin edited this")))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.body").value("Admin edited this"));
+                    .andExpect(status().isForbidden());
         }
 
         @Test

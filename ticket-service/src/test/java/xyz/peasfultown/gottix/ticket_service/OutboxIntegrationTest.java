@@ -26,6 +26,11 @@ public class OutboxIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private OutboxRepository outboxRepo;
 
+    @BeforeEach
+    void setup() {
+        outboxRepo.deleteAll();
+    }
+
     @Nested
     @DisplayName("Ticket CRUD")
     class AddTicket {

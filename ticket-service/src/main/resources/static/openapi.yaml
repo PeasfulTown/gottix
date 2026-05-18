@@ -459,8 +459,8 @@ components:
     SortField:
       type: string
       enum:
-        - createdAt # TODO: FIX
-        - updatedAt
+        - CREATED_AT # TODO: ADD MORE SORT FIELDS
+        - UPDATED_AT
 
     SortOrder:
       type: string

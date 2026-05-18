@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.peasfultown.gottix.ticket_service.config.RabbitMqConfig;
-import xyz.peasfultown.gottix.ticket_service.dto.OutboxComment;
-import xyz.peasfultown.gottix.ticket_service.dto.OutboxTicket;
+import xyz.peasfultown.gottix.ticket_service.dto.CommentChangeEvent;
+import xyz.peasfultown.gottix.ticket_service.dto.TicketChangeEvent;
 import xyz.peasfultown.gottix.ticket_service.entity.*;
 import xyz.peasfultown.gottix.ticket_service.repository.OutboxRepository;
 
@@ -44,7 +44,7 @@ public class OutboxServiceImpl implements OutboxService {
 
     @Override
     public void saveTicketToOutbox(TicketEntity te, EventType type) {
-        OutboxTicket ot = OutboxTicket.builder()
+        TicketChangeEvent ot = TicketChangeEvent.builder()
                 .id(te.getId().toString())
                 .title(te.getTitle() == null ? null : te.getTitle())
                 .description(te.getDescription() == null ? null : te.getDescription())
@@ -52,6 +52,8 @@ public class OutboxServiceImpl implements OutboxService {
                 .priority(te.getPriority() == null ? null : te.getPriority().name())
                 .customerId(te.getCustomerId() == null ? null : te.getCustomerId().toString())
                 .assignedAgentId(te.getAssignedAgentId() == null ? null : te.getAssignedAgentId().toString())
+                .createdAt(te.getCreatedAt())
+                .updatedAt(te.getUpdatedAt())
                 .build();
 
         OutboxEntity oe = OutboxEntity.builder()
@@ -61,12 +63,12 @@ public class OutboxServiceImpl implements OutboxService {
                 .build();
 
         oe = outboxRepo.save(oe);
-        log.info("saved ticket to outbox: {}", oe);
+        log.debug("saved ticket to outbox: {}", oe);
     }
 
     @Override
     public void saveCommentToOutbox(CommentEntity ce, EventType type) {
-        OutboxComment oc = OutboxComment.builder()
+        CommentChangeEvent oc = CommentChangeEvent.builder()
                 .id(ce.getId().toString())
                 .body(ce.getBody())
                 .authorId(ce.getAuthorId().toString())
@@ -94,7 +96,7 @@ public class OutboxServiceImpl implements OutboxService {
                         .setContentType(MessageProperties.CONTENT_TYPE_JSON)
                         .build();
 
-                log.info("sending ticket change event: {}", m);
+                log.debug("sending ticket {} event: {}", oe.getEventType().toString(), m);
                 rabbitTemplate.send(RabbitMqConfig.exchange, RabbitMqConfig.ticket_change_routingKey, m);
                 oe.setStatus(OutboxStatus.PROCESSED);
             } catch (
@@ -121,7 +123,7 @@ public class OutboxServiceImpl implements OutboxService {
                         .setContentType(MessageProperties.CONTENT_TYPE_JSON)
                         .build();
 
-                log.info("sending comment change event: {}", m);
+                log.debug("sending comment {} event: {}", oe.getEventType().toString(), m);
                 rabbitTemplate.send(RabbitMqConfig.exchange, RabbitMqConfig.ticketComment_change_routingKey, m);
                 oe.setStatus(OutboxStatus.PROCESSED);
             } catch (JsonProcessingException e) {
@@ -138,7 +140,7 @@ public class OutboxServiceImpl implements OutboxService {
         if (entities.isEmpty())
             return;
 
-        log.info("cleaning up processed outbox entities");
+        log.debug("cleaning up processed outbox entities");
         outboxRepo.deleteAll(entities);
     }
 }
