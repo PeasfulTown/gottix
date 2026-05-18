@@ -26,6 +26,7 @@ paths:
         - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/SearchStringQuery'
         - $ref: '#/components/parameters/TicketStatusQuery'
+        - $ref: '#/components/parameters/TicketPriorityQuery'
         - $ref: '#/components/parameters/SortByQuery'
         - $ref: '#/components/parameters/SortOrderQuery'
         - $ref: '#/components/parameters/PageNumberQuery'

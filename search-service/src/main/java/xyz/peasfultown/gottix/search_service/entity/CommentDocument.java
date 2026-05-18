@@ -7,7 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Comment {
+public class CommentDocument {
     private String id;
-
+    private String body;
+    private String authorId;
 }

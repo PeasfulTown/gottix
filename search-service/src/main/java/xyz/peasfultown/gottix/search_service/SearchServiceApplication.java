@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableElasticsearchRepositories
-@EnableElasticsearchAuditing
 @EnableDiscoveryClient
 public class SearchServiceApplication {
 

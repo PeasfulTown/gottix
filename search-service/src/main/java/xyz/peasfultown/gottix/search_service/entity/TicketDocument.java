@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Document(indexName = "tickets")
-public class Ticket {
+public class TicketDocument {
     @Id
     private String id;
 
@@ -40,13 +40,11 @@ public class Ticket {
     private String assignedAgentId;
 
     @Field(type = FieldType.Nested)
-    private List<Comment> comments;
+    private List<CommentDocument> comments;
 
-    @CreatedDate
     @Field(type = FieldType.Date)
     private Instant createdAt;
 
-    @LastModifiedDate
     @Field(type = FieldType.Date)
     private Instant updatedAt;
 }

@@ -1,23 +1,121 @@
 package xyz.peasfultown.gottix.search_service.service;
 
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.util.ObjectBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import org.springframework.data.elasticsearch.core.*;
 import org.springframework.stereotype.Service;
 import xyz.peasfultown.gottix.search_service.dto.TicketChangeEvent;
-import xyz.peasfultown.gottix.search_service.entity.Ticket;
+import xyz.peasfultown.gottix.search_service.entity.TicketDocument;
 import xyz.peasfultown.gottix.search_service.entity.TicketPriority;
 import xyz.peasfultown.gottix.search_service.entity.TicketStatus;
+import xyz.peasfultown.gottix.search_service.mapper.TicketMapper;
+import xyz.peasfultown.gottix.search_service.model.*;
 import xyz.peasfultown.gottix.search_service.repository.TicketRepository;
+
+import java.util.function.Function;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
+    private final ElasticsearchOperations ops;
     private final TicketRepository ticketRepo;
+    private final TicketMapper ticketMapper;
+
+    @Override
+    public PagedTicketResponse queryTickets(
+            String search,
+            xyz.peasfultown.gottix.search_service.model.TicketStatus status,
+            xyz.peasfultown.gottix.search_service.model.TicketPriority priority,
+            SortField sortBy,
+            SortOrder sortOrder,
+            Integer pageNumber,
+            Integer pageSize) {
+        NativeQueryBuilder nq = NativeQuery.builder();
+
+        if (search != null && !search.isBlank())
+            withFullTextSearch(nq, search);
+
+        if (status != null)
+            withStatus(nq, status);
+
+        if (priority != null)
+            withPriority(nq, priority);
+
+        String sortField = switch (sortBy) {
+            case CREATED_AT -> "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                sortOrder == SortOrder.DESC
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
+        );
+
+        NativeQuery query = nq
+                .withPageable(pageable)
+                .build();
+
+        SearchHits<TicketDocument> hits = ops.search(query, TicketDocument.class);
+        SearchPage<TicketDocument> page = SearchHitSupport.searchPageFor(hits, query.getPageable());
+
+        return buildPagedTicketResponse(page);
+    }
+
+    private void withFullTextSearch(NativeQueryBuilder nq, String queryText) {
+        nq.withQuery(q -> q
+                .bool(b -> b
+                        .should(s -> s
+                                .match(mt -> mt
+                                        .field("title")
+                                        .query(queryText)
+                                        .fuzziness("AUTO")))));
+    }
+
+    private void withStatus(NativeQueryBuilder nq, xyz.peasfultown.gottix.search_service.model.TicketStatus status) {
+        nq.withQuery(q -> q
+                .bool(b -> b
+                        .filter(f -> f
+                                .term(t -> t
+                                        .field("status")
+                                        .value(status.name())))));
+    }
+
+    private void withPriority(NativeQueryBuilder nq, xyz.peasfultown.gottix.search_service.model.TicketPriority priority) {
+        nq.withQuery(q -> q
+                .bool(b -> b
+                        .filter(f -> f
+                                .term(t -> t
+                                        .field("priority")
+                                        .value(priority.name())))));
+    }
+
+    private PagedTicketResponse buildPagedTicketResponse(SearchPage<TicketDocument> page) {
+        return PagedTicketResponse.builder()
+                .content(page.map(ticketMapper::toModel).getContent())
+                .page(ResponsePage.builder()
+                        .number(page.getNumber())
+                        .size(page.getSize())
+                        .totalElements(page.getTotalElements())
+                        .totalPages(page.getTotalPages())
+                        .build())
+                .build();
+    }
 
     @Override
     public void indexCreateEvent(TicketChangeEvent event) {
-        Ticket t = Ticket.builder()
+        TicketDocument t = TicketDocument.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .description(event.getDescription())
@@ -25,21 +123,22 @@ public class SearchServiceImpl implements SearchService {
                 .priority(TicketPriority.valueOf(event.getPriority()))
                 .customerId(event.getCustomerId())
                 .assignedAgentId(event.getAssignedAgentId())
+                .createdAt(event.getCreatedAt())
+                .updatedAt(event.getUpdatedAt())
                 .build();
 
         ticketRepo.save(t);
     }
 
     @Override
-    public void indexUpdateEvent(
-            TicketChangeEvent event) {
+    public void indexUpdateEvent(TicketChangeEvent event) {
 
     }
 
     @Override
-    public void indexDeleteEvent(
-            TicketChangeEvent event) {
+    public void indexDeleteEvent(TicketChangeEvent event) {
 
     }
+
 
 }
