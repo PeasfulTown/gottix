@@ -15,6 +15,7 @@ import static org.springframework.http.ResponseEntity.ok;
 public class TicketSearchController implements TicketApi {
     private final SearchService searchService;
 
+
     @Override
     public ResponseEntity<PagedTicketResponse> searchTickets(
             String xUserId,
@@ -26,6 +27,9 @@ public class TicketSearchController implements TicketApi {
             @RequestParam(defaultValue = "ASC") SortOrder sortOrder,
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize) throws Exception {
-        return ok(searchService.queryTickets(search, status, priority, sortBy, sortOrder, pageNumber, pageSize));
+        if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
+            return ok(searchService.queryTickets(search, status, priority, sortBy, sortOrder, pageNumber, pageSize));
+        else
+            return ok(searchService.queryCustomerTickets(xUserId, search, status, priority, sortBy, sortOrder, pageNumber, pageSize));
     }
 }
