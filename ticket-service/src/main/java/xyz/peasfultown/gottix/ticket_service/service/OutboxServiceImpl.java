@@ -52,6 +52,8 @@ public class OutboxServiceImpl implements OutboxService {
                 .priority(te.getPriority() == null ? null : te.getPriority().name())
                 .customerId(te.getCustomerId() == null ? null : te.getCustomerId().toString())
                 .assignedAgentId(te.getAssignedAgentId() == null ? null : te.getAssignedAgentId().toString())
+                .createdAt(te.getCreatedAt())
+                .updatedAt(te.getUpdatedAt())
                 .build();
 
         OutboxEntity oe = OutboxEntity.builder()
