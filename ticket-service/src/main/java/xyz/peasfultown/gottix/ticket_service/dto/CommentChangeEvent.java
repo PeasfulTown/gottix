@@ -6,8 +6,10 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Builder
 public class CommentChangeEvent {
+    private String ticketId;
     private String id;
     private String body;
     private String authorId;
