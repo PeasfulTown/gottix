@@ -35,6 +35,21 @@ paths:
         '200':
           $ref: '#/components/responses/PagedTicketResponse'
 
+  /api/v1/search/tickets/suggestions:
+    get:
+      tags: [ ticket ]
+      summary: Ticket search suggestions
+      operationId: searchTicketsSuggestion
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/UserRoleHeader'
+        - $ref: '#/components/parameters/SearchStringQuery'
+        - $ref: '#/components/parameters/SuggestionLimitQuery'
+      responses:
+        '200':
+          $ref: '#/components/responses/TicketSearchSuggestion'
+
+
 components:
   parameters:
 
@@ -97,6 +112,13 @@ components:
         type: integer
         format: int32
 
+    SuggestionLimitQuery:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        format: int32
+
 #  requestBodies:
 
   responses:
@@ -107,6 +129,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PagedTicketResponse'
+
+    TicketSearchSuggestion:
+      description: List of titles suggestion
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SearchSuggestion'
 
   schemas:
 
@@ -215,3 +244,11 @@ components:
 #        updatedAt:
 #          type: string
 #          format: date-time
+
+    SearchSuggestion:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
