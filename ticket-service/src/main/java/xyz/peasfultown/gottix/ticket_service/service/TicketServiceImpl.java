@@ -50,12 +50,17 @@ public class TicketServiceImpl implements TicketService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
+        String sortField = switch (sortBy) {
+            case CREATED_AT ->  "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 sortOrder == SortOrder.DESC
-                        ? Sort.by(sortBy.getValue()).descending()
-                        : Sort.by(sortBy.getValue()).ascending()
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
         );
 
         return ticketRepo.findBy(
@@ -91,12 +96,17 @@ public class TicketServiceImpl implements TicketService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
+        String sortField = switch (sortBy) {
+            case CREATED_AT ->  "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 sortOrder == SortOrder.DESC
-                        ? Sort.by(sortBy.getValue()).descending()
-                        : Sort.by(sortBy.getValue()).ascending()
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
         );
 
         return ticketRepo.findBy(
@@ -116,12 +126,17 @@ public class TicketServiceImpl implements TicketService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
+        String sortField = switch (sortBy) {
+            case CREATED_AT ->  "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 sortOrder == SortOrder.DESC
-                        ? Sort.by(sortBy.getValue()).descending()
-                        : Sort.by(sortBy.getValue()).ascending()
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
         );
 
         return ticketRepo.findBy(
