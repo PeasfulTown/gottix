@@ -5,10 +5,14 @@ import xyz.peasfultown.gottix.search_service.model.*;
 
 public interface SearchService {
 
+    // ============================================================
+    // QUERYING
+    // ============================================================
+
     PagedTicketResponse queryTickets(String search, TicketStatus status, TicketPriority priority, SortField sortBy, SortOrder sortOrder, Integer pageNumber, Integer pageSize);
 
     // ============================================================
-    // EVENTS
+    // INDEXING EVENT HANDLER METHODS
     // ============================================================
 
     void indexCreateEvent(TicketChangeEvent event);

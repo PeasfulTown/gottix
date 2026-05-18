@@ -30,6 +30,10 @@ public class SearchServiceImpl implements SearchService {
     private final TicketRepository ticketRepo;
     private final TicketMapper ticketMapper;
 
+    // ============================================================
+    // QUERYING
+    // ============================================================
+
     @Override
     public PagedTicketResponse queryTickets(
             String search,
@@ -73,6 +77,10 @@ public class SearchServiceImpl implements SearchService {
         return buildPagedTicketResponse(page);
     }
 
+    // ============================================================
+    // QUERY BUILDER
+    // ============================================================
+
     private void withFullTextSearch(NativeQueryBuilder nq, String queryText) {
         nq.withQuery(q -> q
                 .bool(b -> b
@@ -101,17 +109,9 @@ public class SearchServiceImpl implements SearchService {
                                         .value(priority.name())))));
     }
 
-    private PagedTicketResponse buildPagedTicketResponse(SearchPage<TicketDocument> page) {
-        return PagedTicketResponse.builder()
-                .content(page.map(ticketMapper::toModel).getContent())
-                .page(ResponsePage.builder()
-                        .number(page.getNumber())
-                        .size(page.getSize())
-                        .totalElements(page.getTotalElements())
-                        .totalPages(page.getTotalPages())
-                        .build())
-                .build();
-    }
+    // ============================================================
+    // INDEXING EVENT HANDLER METHODS
+    // ============================================================
 
     @Override
     public void indexCreateEvent(TicketChangeEvent event) {
@@ -140,5 +140,21 @@ public class SearchServiceImpl implements SearchService {
 
     }
 
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+
+    private PagedTicketResponse buildPagedTicketResponse(SearchPage<TicketDocument> page) {
+        return PagedTicketResponse.builder()
+                .content(page.map(ticketMapper::toModel).getContent())
+                .page(ResponsePage.builder()
+                        .number(page.getNumber())
+                        .size(page.getSize())
+                        .totalElements(page.getTotalElements())
+                        .totalPages(page.getTotalPages())
+                        .build())
+                .build();
+    }
 
 }
