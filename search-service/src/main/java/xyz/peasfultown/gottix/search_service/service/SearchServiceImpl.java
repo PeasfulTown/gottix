@@ -85,9 +85,63 @@ public class SearchServiceImpl implements SearchService {
         return buildPagedTicketResponse(page);
     }
 
+    @Override
+    public PagedTicketResponse queryCustomerTickets(
+            String customerId,
+            String search,
+            xyz.peasfultown.gottix.search_service.model.TicketStatus status,
+            xyz.peasfultown.gottix.search_service.model.TicketPriority priority,
+            SortField sortBy,
+            SortOrder sortOrder,
+            Integer pageNumber,
+            Integer pageSize) {
+        NativeQueryBuilder nq = NativeQuery.builder();
+
+        withCustomerId(nq, customerId);
+
+        if (search != null && !search.isBlank())
+            withFullTextSearch(nq, search);
+
+        if (status != null)
+            withStatus(nq, status);
+
+        if (priority != null)
+            withPriority(nq, priority);
+
+        String sortField = switch (sortBy) {
+            case CREATED_AT -> "createdAt";
+            case UPDATED_AT -> "updatedAt";
+        };
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                sortOrder == SortOrder.DESC
+                        ? Sort.by(sortField).descending()
+                        : Sort.by(sortField).ascending()
+        );
+
+        NativeQuery query = nq
+                .withPageable(pageable)
+                .build();
+
+        SearchHits<TicketDocument> hits = ops.search(query, TicketDocument.class);
+        SearchPage<TicketDocument> page = SearchHitSupport.searchPageFor(hits, query.getPageable());
+
+        return buildPagedTicketResponse(page);
+    }
+
     // ============================================================
     // QUERY BUILDER
     // ============================================================
+
+    private void withCustomerId(NativeQueryBuilder nq, String customerId) {
+        nq.withQuery(q -> q
+                .term(t -> t
+                        .field("customerId")
+                        .value(customerId))
+        );
+    }
 
     /* full text search matches title, description, and comment bodies */
     private void withFullTextSearch(NativeQueryBuilder nq, String queryText) {

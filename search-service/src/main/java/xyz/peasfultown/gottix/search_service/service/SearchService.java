@@ -12,6 +12,8 @@ public interface SearchService {
 
     PagedTicketResponse queryTickets(String search, TicketStatus status, TicketPriority priority, SortField sortBy, SortOrder sortOrder, Integer pageNumber, Integer pageSize);
 
+    PagedTicketResponse queryCustomerTickets(String customerId, String search, TicketStatus status, TicketPriority priority, SortField sortBy, SortOrder sortOrder, Integer pageNumber, Integer pageSize);
+
     // ============================================================
     // INDEXING EVENT HANDLER METHODS
     // ============================================================
