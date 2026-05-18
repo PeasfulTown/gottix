@@ -1,0 +1,15 @@
+library: "spring-boot"
+modelPackage: "xyz.peasfultown.gottix.search_service.model"
+apiPackage: "xyz.peasfultown.gottix.search_service"
+invokerPackage: "xyz.peasfultown.gottix.search_service"
+dateLibrary: "java8"
+unhandledException: true
+sourceFolder: "src/main/java"
+resourceFolder: "src/main/resources"
+useBeanValidation: true
+useJakartaEe: true
+useSpringBoot3: true
+useTags: true
+generateBuilders: true
+serializableModel: true
+useSwaggerUI: true

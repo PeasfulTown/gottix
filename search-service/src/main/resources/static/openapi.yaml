@@ -1,0 +1,49 @@
+openapi: 3.0.1
+info:
+  title: Gottix Search Service
+  description: |
+    Handles the search component of the customer support tickets microservices platform
+  contact:
+    email: emrin4@gmail.com
+  license:
+    name: MIT
+    url: https://mit-license.org/
+  version: 0.0.1
+
+tags:
+  - name: ticket
+    description: Ticket search endpoint
+
+
+paths:
+  /api/v1/tickets/search:
+    get:
+      tags: [ ticket ]
+      summary: Search tickets
+      responses:
+        '200':
+          description: test
+          content: {}
+
+components:
+  parameters:
+
+    UserIdHeader:
+      name: X-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+
+    UserRoleHeader:
+      name: X-User-Role
+      in: header
+      required: true
+      schema:
+        type: string
+
+#  requestBodies:
+#
+#  responses:
+#
+#  schemas:
