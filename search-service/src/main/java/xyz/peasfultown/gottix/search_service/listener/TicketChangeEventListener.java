@@ -13,7 +13,7 @@ import xyz.peasfultown.gottix.search_service.service.SearchService;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class TicketUpdateEventListener {
+public class TicketChangeEventListener {
     private static final String TYPE_ID_HEADER = "__TypeId__";
 
     private final RabbitTemplate rabbitTemplate;
