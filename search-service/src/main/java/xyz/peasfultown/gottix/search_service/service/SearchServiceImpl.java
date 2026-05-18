@@ -11,6 +11,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.*;
+import org.springframework.data.elasticsearch.core.document.Document;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.UpdateQuery;
 import org.springframework.stereotype.Service;
 import xyz.peasfultown.gottix.search_service.dto.TicketChangeEvent;
 import xyz.peasfultown.gottix.search_service.entity.TicketDocument;
@@ -132,14 +135,41 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public void indexUpdateEvent(TicketChangeEvent event) {
+        TicketDocument td = new TicketDocument();
+        td.setId(event.getId());
 
+        if (event.getTitle() != null && !event.getTitle().isBlank())
+            td.setTitle(event.getTitle());
+        if (event.getDescription() != null && !event.getDescription().isBlank())
+            td.setDescription(event.getDescription());
+        if (event.getStatus() != null && !event.getStatus().isBlank())
+            td.setStatus(TicketStatus.valueOf(event.getStatus()));
+        if (event.getPriority() != null && !event.getPriority().isBlank())
+            td.setPriority(TicketPriority.valueOf(event.getPriority()));
+        if (event.getCustomerId() != null && !event.getCustomerId().isBlank())
+            td.setCustomerId(event.getCustomerId());
+        if (event.getAssignedAgentId() != null && !event.getAssignedAgentId().isBlank())
+            td.setAssignedAgentId(event.getAssignedAgentId());
+
+        td.setUpdatedAt(event.getUpdatedAt());
+
+        UpdateQuery uq = UpdateQuery.builder(event.getId())
+                .withDocument(ops.getElasticsearchConverter().mapObject(td))
+                .build();
+
+        log.debug("updating document {}", td);
+        ops.update(uq, IndexCoordinates.of("tickets"));
     }
 
     @Override
     public void indexDeleteEvent(TicketChangeEvent event) {
-
+        log.debug("deleting document {}", event);
+        try {
+            ticketRepo.deleteById(event.getId());
+        } catch (Exception e) {
+            log.error("unable to delete document {}", event.getId(), e);
+        }
     }
-
 
     // ============================================================
     // HELPERS
