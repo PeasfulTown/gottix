@@ -2,7 +2,7 @@ package xyz.peasfultown.gottix.search_service.listener;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.annotation.*;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
@@ -13,10 +13,7 @@ import xyz.peasfultown.gottix.search_service.service.SearchService;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class TicketUpdateEventListener {
-    private static final String TYPE_ID_HEADER = "__TypeId__";
-
-    private final RabbitTemplate rabbitTemplate;
+public class TicketChangeEventListener {
     private final SearchService service;
 
     @RabbitListener(

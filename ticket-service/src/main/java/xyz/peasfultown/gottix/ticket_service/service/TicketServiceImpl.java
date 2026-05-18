@@ -397,7 +397,7 @@ public class TicketServiceImpl implements TicketService {
                         "comment ID: %s not found for ticket ID: %s", commentId, ticketId
                 )));
 
-        outboxService.saveCommentToOutbox(ce, EventType.UPDATE);
+        outboxService.saveCommentToOutbox(ce, EventType.DELETE);
         commentRepo.delete(ce);
         ce.getTicket().getComments().remove(ce);
     }
@@ -412,7 +412,7 @@ public class TicketServiceImpl implements TicketService {
         if (!ce.getAuthorId().toString().equals(userId))
             throw new ForbiddenException("user not allowed to delete comment they don't own");
 
-        outboxService.saveCommentToOutbox(ce, EventType.UPDATE);
+        outboxService.saveCommentToOutbox(ce, EventType.DELETE);
         commentRepo.delete(ce);
         ce.getTicket().getComments().remove(ce);
     }

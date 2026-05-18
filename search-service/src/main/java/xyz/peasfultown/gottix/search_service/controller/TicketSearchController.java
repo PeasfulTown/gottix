@@ -1,7 +1,6 @@
 package xyz.peasfultown.gottix.search_service.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.elasticsearch.core.SearchPage;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;

@@ -63,12 +63,13 @@ public class OutboxServiceImpl implements OutboxService {
                 .build();
 
         oe = outboxRepo.save(oe);
-        log.debug("saved ticket to outbox: {}", oe);
+        log.debug("saved ticket {} event to outbox: {}", type, oe);
     }
 
     @Override
     public void saveCommentToOutbox(CommentEntity ce, EventType type) {
         CommentChangeEvent oc = CommentChangeEvent.builder()
+                .ticketId(ce.getTicket().getId().toString())
                 .id(ce.getId().toString())
                 .body(ce.getBody())
                 .authorId(ce.getAuthorId().toString())
@@ -81,7 +82,7 @@ public class OutboxServiceImpl implements OutboxService {
                 .build();
 
         oe = outboxRepo.save(oe);
-        log.info("saved comment to outbox: {}", oe);
+        log.info("saved comment to outbox: {}", oc);
     }
 
     @Override

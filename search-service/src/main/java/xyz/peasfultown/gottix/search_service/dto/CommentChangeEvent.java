@@ -1,11 +1,13 @@
-package xyz.peasfultown.gottix.ticket_service.dto;
+package xyz.peasfultown.gottix.search_service.dto;
 
 import lombok.*;
 
+import java.time.Instant;
+
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @ToString
 @Builder
 public class CommentChangeEvent {
@@ -13,4 +15,5 @@ public class CommentChangeEvent {
     private String id;
     private String body;
     private String authorId;
+    private Instant updatedAt;
 }

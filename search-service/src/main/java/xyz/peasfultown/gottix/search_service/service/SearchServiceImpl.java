@@ -1,29 +1,34 @@
 package xyz.peasfultown.gottix.search_service.service;
 
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.util.ObjectBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
-import org.springframework.data.elasticsearch.core.*;
-import org.springframework.data.elasticsearch.core.document.Document;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHitSupport;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.SearchPage;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.ScriptType;
 import org.springframework.data.elasticsearch.core.query.UpdateQuery;
 import org.springframework.stereotype.Service;
+import xyz.peasfultown.gottix.search_service.dto.CommentChangeEvent;
 import xyz.peasfultown.gottix.search_service.dto.TicketChangeEvent;
+import xyz.peasfultown.gottix.search_service.entity.CommentDocument;
 import xyz.peasfultown.gottix.search_service.entity.TicketDocument;
 import xyz.peasfultown.gottix.search_service.entity.TicketPriority;
 import xyz.peasfultown.gottix.search_service.entity.TicketStatus;
 import xyz.peasfultown.gottix.search_service.mapper.TicketMapper;
-import xyz.peasfultown.gottix.search_service.model.*;
+import xyz.peasfultown.gottix.search_service.model.PagedTicketResponse;
+import xyz.peasfultown.gottix.search_service.model.ResponsePage;
+import xyz.peasfultown.gottix.search_service.model.SortField;
+import xyz.peasfultown.gottix.search_service.model.SortOrder;
 import xyz.peasfultown.gottix.search_service.repository.TicketRepository;
 
-import java.util.function.Function;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -84,6 +89,7 @@ public class SearchServiceImpl implements SearchService {
     // QUERY BUILDER
     // ============================================================
 
+    /* full text search matches title, description, and comment bodies */
     private void withFullTextSearch(NativeQueryBuilder nq, String queryText) {
         nq.withQuery(q -> q
                 .bool(b -> b
@@ -91,7 +97,20 @@ public class SearchServiceImpl implements SearchService {
                                 .match(mt -> mt
                                         .field("title")
                                         .query(queryText)
-                                        .fuzziness("AUTO")))));
+                                        .fuzziness("AUTO")))
+                        .should(s -> s
+                                .match(mt -> mt
+                                        .field("description")
+                                        .query(queryText)
+                                        .fuzziness("AUTO")))
+                        .should(s -> s
+                                .nested(n -> n
+                                        .path("comments")
+                                        .query(neq -> neq
+                                                .match(ma -> ma
+                                                        .field("comments.body")
+                                                        .query(queryText)))))
+                ));
     }
 
     private void withStatus(NativeQueryBuilder nq, xyz.peasfultown.gottix.search_service.model.TicketStatus status) {
@@ -169,6 +188,77 @@ public class SearchServiceImpl implements SearchService {
         } catch (Exception e) {
             log.error("unable to delete document {}", event.getId(), e);
         }
+    }
+
+    @Override
+    public void indexCommentCreateEvent(CommentChangeEvent event) {
+        CommentDocument cd = CommentDocument.builder()
+                .id(event.getId())
+                .body(event.getBody())
+                .authorId(event.getAuthorId())
+                .build();
+
+        Map<String, Object> params = Map.of("comment", ops.getElasticsearchConverter().mapObject(cd));
+
+        String updateScript = """
+                if (ctx._source.comments == null) {
+                    ctx._source.comments = [];
+                }
+                ctx._source.comments.add(params.comment);
+                """;
+
+        UpdateQuery uq = UpdateQuery.builder(event.getTicketId())
+                .withScriptType(ScriptType.INLINE)
+                .withScript(updateScript)
+                .withParams(params)
+                .build();
+
+        ops.update(uq, IndexCoordinates.of("tickets"));
+    }
+
+    @Override
+    public void indexCommentUpdateEvent(CommentChangeEvent event) {
+        String updateScript = """
+                for (item in ctx._source.comments) {
+                    if (item.id == params.id) {
+                        item.body = params.body;
+                    }
+                }
+                """;
+
+        Map<String, Object> params = Map.of(
+                "id", event.getId(),
+                "body", event.getBody()
+        );
+
+        UpdateQuery uq = UpdateQuery.builder(event.getTicketId())
+                .withScriptType(ScriptType.INLINE)
+                .withScript(updateScript)
+                .withParams(params)
+                .build();
+
+        ops.update(uq, IndexCoordinates.of("tickets"));
+    }
+
+    @Override
+    public void indexCommentDeleteEvent(CommentChangeEvent event) {
+        String deleteScript = """
+                if (ctx._source.comments != null) {
+                    ctx._source.comments.removeIf(item -> item.id == params.commentId);
+                }
+                """;
+
+        Map<String, Object> params = Map.of(
+                "commentId", event.getId()
+        );
+
+        UpdateQuery uq = UpdateQuery.builder(event.getTicketId())
+                .withScriptType(ScriptType.INLINE)
+                .withScript(deleteScript)
+                .withParams(params)
+                .build();
+
+        ops.update(uq, IndexCoordinates.of("tickets"));
     }
 
     // ============================================================
