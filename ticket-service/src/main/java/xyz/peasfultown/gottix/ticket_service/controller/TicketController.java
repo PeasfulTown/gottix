@@ -144,10 +144,10 @@ public class TicketController implements TicketApi {
             String ticketId) throws Exception {
         if (xUserRole.equals("ADMIN"))
             ticketService.deleteTicket(ticketId);
-        if (xUserRole.equals("AGENT"))
+        else if (xUserRole.equals("AGENT"))
             throw new ForbiddenException("agent not allowed to delete ticket");
-
-        ticketService.deleteTicket(xUserId, ticketId);
+        else if (xUserRole.equals("CUSTOMER"))
+            ticketService.deleteTicket(xUserId, ticketId);
 
         return status(HttpStatus.NO_CONTENT).build();
     }

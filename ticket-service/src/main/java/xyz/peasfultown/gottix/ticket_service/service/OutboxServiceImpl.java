@@ -63,7 +63,7 @@ public class OutboxServiceImpl implements OutboxService {
                 .build();
 
         oe = outboxRepo.save(oe);
-        log.info("saved ticket to outbox: {}", oe);
+        log.debug("saved ticket to outbox: {}", oe);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class OutboxServiceImpl implements OutboxService {
                         .setContentType(MessageProperties.CONTENT_TYPE_JSON)
                         .build();
 
-                log.info("sending ticket change event: {}", m);
+                log.debug("sending ticket {} event: {}", oe.getEventType().toString(), m);
                 rabbitTemplate.send(RabbitMqConfig.exchange, RabbitMqConfig.ticket_change_routingKey, m);
                 oe.setStatus(OutboxStatus.PROCESSED);
             } catch (
@@ -123,7 +123,7 @@ public class OutboxServiceImpl implements OutboxService {
                         .setContentType(MessageProperties.CONTENT_TYPE_JSON)
                         .build();
 
-                log.info("sending comment change event: {}", m);
+                log.debug("sending comment {} event: {}", oe.getEventType().toString(), m);
                 rabbitTemplate.send(RabbitMqConfig.exchange, RabbitMqConfig.ticketComment_change_routingKey, m);
                 oe.setStatus(OutboxStatus.PROCESSED);
             } catch (JsonProcessingException e) {
@@ -140,7 +140,7 @@ public class OutboxServiceImpl implements OutboxService {
         if (entities.isEmpty())
             return;
 
-        log.info("cleaning up processed outbox entities");
+        log.debug("cleaning up processed outbox entities");
         outboxRepo.deleteAll(entities);
     }
 }
