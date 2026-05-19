@@ -51,7 +51,17 @@ paths:
         '200':
           $ref: '#/components/responses/TicketSearchSuggestion'
 
-
+  /api/v1/search/tickets/stats:
+    get:
+      tags: [ ticket ]
+      summary: Get ticket stats
+      operationId: getTicketStats
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/UserRoleHeader'
+      responses:
+        '200':
+          $ref: '#/components/responses/TicketStats'
 components:
   parameters:
 
@@ -148,6 +158,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SearchSuggestion'
+
+    TicketStats:
+      description: Tickets statistics, shows stats of all of user's tickets if user is a customer,
+        stats of all of an agent's assigned tickets, stats across all tickets if the user is an admin
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketStats'
 
   schemas:
 
@@ -250,12 +268,6 @@ components:
           type: string
         body:
           type: string
-#        createdAt:
-#          type: string
-#          format: date-time
-#        updatedAt:
-#          type: string
-#          format: date-time
 
     SearchSuggestion:
       type: object
@@ -264,3 +276,17 @@ components:
           type: array
           items:
             type: string
+
+    TicketStats:
+      type: object
+      properties:
+        statusCount:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        priorityCounts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64

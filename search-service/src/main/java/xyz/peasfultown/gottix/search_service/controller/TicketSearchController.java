@@ -46,4 +46,11 @@ public class TicketSearchController implements TicketApi {
         else
             return ok(searchService.getCustomerSearchSuggestion(xUserId, search, limit));
     }
+
+    @Override
+    public ResponseEntity<TicketStats> getTicketStats(
+            String xUserId,
+            String xUserRole) throws Exception {
+        return ok(searchService.getTicketStats(xUserId, xUserRole));
+    }
 }
