@@ -10,7 +10,7 @@ public interface SearchService {
     // QUERYING
     // ============================================================
 
-    PagedTicketResponse queryTickets(String search, TicketStatus status, TicketPriority priority, SortField sortBy, SortOrder sortOrder, Integer pageNumber, Integer pageSize);
+    PagedTicketResponse queryTickets(String search, TicketStatus status, TicketPriority priority, String customerId, String assignedAgentId, SortField sortBy, SortOrder sortOrder, Integer pageNumber, Integer pageSize);
 
     PagedTicketResponse queryCustomerTickets(String customerId, String search, TicketStatus status, TicketPriority priority, SortField sortBy, SortOrder sortOrder, Integer pageNumber, Integer pageSize);
 

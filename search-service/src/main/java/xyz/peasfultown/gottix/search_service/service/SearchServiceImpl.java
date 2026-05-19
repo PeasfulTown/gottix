@@ -44,6 +44,8 @@ public class SearchServiceImpl implements SearchService {
             String search,
             xyz.peasfultown.gottix.search_service.model.TicketStatus status,
             xyz.peasfultown.gottix.search_service.model.TicketPriority priority,
+            String customerId,
+            String assignedAgentId,
             SortField sortBy,
             SortOrder sortOrder,
             Integer pageNumber,
@@ -51,6 +53,8 @@ public class SearchServiceImpl implements SearchService {
         NativeQuery nq = NativeQuery.builder()
                 .withQuery(q -> q.bool(b -> {
                     withCommonFields(b, search, status, priority);
+                    withCustomerId(b, customerId);
+                    withAssignedAgentId(b, assignedAgentId);
                     return b;
                 }))
                 .withPageable(buildPageable(sortBy, sortOrder, pageNumber, pageSize))
@@ -168,14 +172,27 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private void withCustomerId(BoolQuery.Builder b, String customerId) {
-            b.filter(f -> f
+        if (customerId == null || customerId.isBlank())
+            return;
+        b.filter(f -> f
+            .term(t -> t
+                    .field("customerId")
+                    .value(customerId)));
+    }
+
+    private void withAssignedAgentId(BoolQuery.Builder b, String assignedAgentId) {
+        if (assignedAgentId == null || assignedAgentId.isBlank())
+            return;
+        b.filter(f -> f
                 .term(t -> t
                         .field("customerId")
-                        .value(customerId)));
+                        .value(assignedAgentId)));
     }
 
     /* full text search matches title, description, and comment bodies */
     private void withFullTextSearch(BoolQuery.Builder b, String queryText) {
+        if (queryText == null || queryText.isBlank())
+            return;
         b.should(s -> s
                 .match(mt -> mt
                             .field("title")
@@ -196,6 +213,8 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private void withStatus(BoolQuery.Builder b, xyz.peasfultown.gottix.search_service.model.TicketStatus status) {
+        if (status == null)
+            return;
         b.filter(f -> f
                 .term(t -> t
                         .field("status")
@@ -203,6 +222,8 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private void withPriority(BoolQuery.Builder b, xyz.peasfultown.gottix.search_service.model.TicketPriority priority) {
+        if (priority == null)
+            return;
         b.filter(f -> f
                 .term(t -> t
                         .field("priority")
@@ -210,12 +231,14 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private void withTitleSuggestion(BoolQuery.Builder b, String text) {
-            b.must(m -> m
-                            .match(ma -> ma
-                                    .field("title")
-                                    .query(text)
-                                    .analyzer("standard")
-                                    .fuzziness("AUTO")));
+        if (text == null || text.isBlank())
+            return;
+        b.must(m -> m
+                        .match(ma -> ma
+                                .field("title")
+                                .query(text)
+                                .analyzer("standard")
+                                .fuzziness("AUTO")));
     }
 
     // ============================================================

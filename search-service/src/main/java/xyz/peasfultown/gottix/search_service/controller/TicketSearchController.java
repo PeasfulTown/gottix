@@ -23,12 +23,14 @@ public class TicketSearchController implements TicketApi {
             String search,
             TicketStatus status,
             TicketPriority priority,
+            String customerId,
+            String assignedAgentId,
             @RequestParam(defaultValue = "CREATED_AT") SortField sortBy,
             @RequestParam(defaultValue = "ASC") SortOrder sortOrder,
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize) throws Exception {
         if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
-            return ok(searchService.queryTickets(search, status, priority, sortBy, sortOrder, pageNumber, pageSize));
+            return ok(searchService.queryTickets(search, status, priority, customerId, assignedAgentId, sortBy, sortOrder, pageNumber, pageSize));
         else
             return ok(searchService.queryCustomerTickets(xUserId, search, status, priority, sortBy, sortOrder, pageNumber, pageSize));
     }
@@ -38,7 +40,7 @@ public class TicketSearchController implements TicketApi {
             String xUserId,
             String xUserRole,
             String search,
-            Integer limit) throws Exception {
+            @RequestParam(defaultValue = "5") Integer limit) throws Exception {
         if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
             return ok(searchService.getSearchSuggestion(search, limit));
         else
