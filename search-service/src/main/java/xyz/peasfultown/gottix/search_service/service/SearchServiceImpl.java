@@ -22,10 +22,7 @@ import xyz.peasfultown.gottix.search_service.entity.TicketDocument;
 import xyz.peasfultown.gottix.search_service.entity.TicketPriority;
 import xyz.peasfultown.gottix.search_service.entity.TicketStatus;
 import xyz.peasfultown.gottix.search_service.mapper.TicketMapper;
-import xyz.peasfultown.gottix.search_service.model.PagedTicketResponse;
-import xyz.peasfultown.gottix.search_service.model.ResponsePage;
-import xyz.peasfultown.gottix.search_service.model.SortField;
-import xyz.peasfultown.gottix.search_service.model.SortOrder;
+import xyz.peasfultown.gottix.search_service.model.*;
 import xyz.peasfultown.gottix.search_service.repository.TicketRepository;
 
 import java.util.Map;
@@ -87,6 +84,22 @@ public class SearchServiceImpl implements SearchService {
         SearchPage<TicketDocument> page = SearchHitSupport.searchPageFor(hits, query.getPageable());
 
         return buildPagedTicketResponse(page);
+    }
+
+    @Override
+    public SearchSuggestion getSearchSuggestion(
+            String search,
+            Integer limit) {
+        NativeQueryBuilder nq = NativeQuery.builder();
+        withTitleSuggestion(nq, search, limit);
+        SearchHits<TicketDocument> hits = ops.search(nq.build(), TicketDocument.class);
+        return SearchSuggestion.builder()
+                .suggestions(hits.getSearchHits()
+                        .stream()
+                        .map(h -> h.getContent().getTitle())
+                        .distinct()
+                        .toList())
+                .build();
     }
 
     // ============================================================
@@ -171,6 +184,16 @@ public class SearchServiceImpl implements SearchService {
                                 .term(t -> t
                                         .field("priority")
                                         .value(priority.name())))));
+    }
+
+    private void withTitleSuggestion(NativeQueryBuilder nq, String text, int limit) {
+        nq.withQuery(q -> q
+                .match(m -> m
+                        .field("title")
+                        .query(text)
+                        .analyzer("standard")
+                        .fuzziness("AUTO")))
+                .withPageable(PageRequest.of(0, limit));
     }
 
     // ============================================================

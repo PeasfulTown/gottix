@@ -14,6 +14,8 @@ public interface SearchService {
 
     PagedTicketResponse queryCustomerTickets(String customerId, String search, TicketStatus status, TicketPriority priority, SortField sortBy, SortOrder sortOrder, Integer pageNumber, Integer pageSize);
 
+    SearchSuggestion getSearchSuggestion(String search, Integer limit);
+
     // ============================================================
     // INDEXING EVENT HANDLER METHODS
     // ============================================================
@@ -29,5 +31,4 @@ public interface SearchService {
     void indexCommentUpdateEvent(CommentChangeEvent event);
 
     void indexCommentDeleteEvent(CommentChangeEvent event);
-
 }
