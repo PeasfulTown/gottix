@@ -20,7 +20,7 @@ public class TicketDocument {
     @Id
     private String id;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "autocomplete_index", searchAnalyzer = "standard")
     private String title;
 
     @Field(type = FieldType.Text)

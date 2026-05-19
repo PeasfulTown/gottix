@@ -32,4 +32,16 @@ public class TicketSearchController implements TicketApi {
         else
             return ok(searchService.queryCustomerTickets(xUserId, search, status, priority, sortBy, sortOrder, pageNumber, pageSize));
     }
+
+    @Override
+    public ResponseEntity<SearchSuggestion> searchTicketsSuggestion(
+            String xUserId,
+            String xUserRole,
+            String search,
+            Integer limit) throws Exception {
+        if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
+            return ok(searchService.getSearchSuggestion(search, limit));
+        else
+            return ok(searchService.getCustomerSearchSuggestion(xUserId, search, limit));
+    }
 }
