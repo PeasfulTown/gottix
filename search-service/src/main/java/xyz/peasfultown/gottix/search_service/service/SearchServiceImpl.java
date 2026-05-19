@@ -44,6 +44,8 @@ public class SearchServiceImpl implements SearchService {
             String search,
             xyz.peasfultown.gottix.search_service.model.TicketStatus status,
             xyz.peasfultown.gottix.search_service.model.TicketPriority priority,
+            String customerId,
+            String assignedAgentId,
             SortField sortBy,
             SortOrder sortOrder,
             Integer pageNumber,
@@ -51,6 +53,8 @@ public class SearchServiceImpl implements SearchService {
         NativeQuery nq = NativeQuery.builder()
                 .withQuery(q -> q.bool(b -> {
                     withCommonFields(b, search, status, priority);
+                    withCustomerId(b, customerId);
+                    withAssignedAgentId(b, assignedAgentId);
                     return b;
                 }))
                 .withPageable(buildPageable(sortBy, sortOrder, pageNumber, pageSize))
@@ -172,6 +176,13 @@ public class SearchServiceImpl implements SearchService {
                 .term(t -> t
                         .field("customerId")
                         .value(customerId)));
+    }
+
+    private void withAssignedAgentId(BoolQuery.Builder b, String assignedAgentId) {
+        b.filter(f -> f
+                .term(t -> t
+                        .field("customerId")
+                        .value(assignedAgentId)));
     }
 
     /* full text search matches title, description, and comment bodies */
