@@ -1,0 +1,338 @@
+openapi: 3.0.1
+info:
+  title: Gottix Customer Support Authentication
+  description: |
+    Gottix customer support platform
+  contact:
+    email: emrin4@gmail.com
+  license:
+    name: MIT
+    url: https://mit-license.org/
+  version: 0.0.1
+
+servers:
+  - url: /
+
+tags:
+  - name: auth
+    description: User authentication management
+
+paths:
+
+  /api/v1/auth/register:
+    post:
+      tags: [ auth ]
+      summary: Create a new account
+      operationId: register
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/Token'
+        '400':
+          $ref: '#/components/responses/ProblemDetail'
+
+  /api/v1/auth/login:
+
+    post:
+      tags: [ auth ]
+      summary: Login
+      description: Creates new refresh token and access token
+      operationId: login
+      requestBody:
+        $ref: '#/components/requestBodies/LoginRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Token'
+        '400':
+          $ref: '#/components/responses/ProblemDetail'
+
+  /api/v1/auth/token/renew:
+
+    post:
+      tags: [ auth ]
+      summary: Renew access token
+      operationId: renewAccessToken
+      requestBody:
+        $ref: '#/components/requestBodies/RefreshToken'
+      responses:
+        '200':
+          $ref: '#/components/responses/Token'
+        '400':
+          $ref: '#/components/responses/ProblemDetail'
+
+  /api/v1/auth/logout:
+
+    post:
+      tags: [ auth ]
+      summary: Logout
+      description: Invalidates refresh token and access token
+      operationId: logout
+      requestBody:
+        $ref: '#/components/requestBodies/Token'
+      responses:
+        '204':
+          description: No content
+          content: {}
+
+  /api/v1/users:
+
+    get:
+      tags: [ auth ]
+      summary: Get all user record (admin only)
+      operationId: getUsers
+      parameters:
+        - $ref: '#/components/parameters/PageNumberQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
+      responses:
+        '200':
+          $ref: '#/components/responses/PagedUser'
+        '403':
+          $ref: '#/components/responses/ProblemDetail'
+
+  /api/v1/users/me:
+
+    get:
+      tags: [ auth ]
+      summary: Get user information
+      operationId: getUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleUser'
+
+    patch:
+      tags: [ auth ]
+      summary: Update user record
+      operationId: updateUser
+      requestBody:
+        $ref: '#/components/requestBodies/UserUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleUser'
+
+    delete:
+      tags: [ auth ]
+      summary: Delete user record
+      operationId: deleteUser
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+components:
+
+  requestBodies:
+
+    RegisterRequest:
+      description: Account register form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterRequest'
+
+    LoginRequest:
+      description: Account login form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginRequest'
+
+    Token:
+      description: Access and refresh token object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+
+    RefreshToken:
+      description: Refresh token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RefreshToken'
+
+    UserUpdateRequest:
+      description: User update form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserUpdateRequest'
+
+  responses:
+
+    ProblemDetail:
+      description: Api error detail response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Token:
+      description: access and refresh tokens
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+
+    SingleUser:
+      description: User object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+
+    PagedUser:
+      description: Paged user response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PagedUserResponse'
+
+  schemas:
+
+    ProblemDetail:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Not Found"
+        status:
+          type: integer
+          example: 404
+        detail:
+          type: string
+          example: "Ticket not found by ID: abc123"
+        instance:
+          type: string
+          format: uri
+          example: "/api/v1/tickets/abc123"
+      required: [ status ]
+
+    ResponsePage:
+      type: object
+      properties:
+        size:
+          type: integer
+        number:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    PagedResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        page:
+          $ref: '#/components/schemas/ResponsePage'
+
+    PagedUserResponse:
+      allOf:
+        - $ref: '#/components/schemas/PagedResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      required: [ email, password, firstName, lastName, phone ]
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 5
+        password:
+          type: string
+          format: password
+          minLength: 5
+        firstName:
+          type: string
+          minLength: 3
+        lastName:
+          type: string
+          minLength: 3
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 10
+
+    LoginRequest:
+      type: object
+      required: [ email, password ]
+      properties:
+        email:
+          type: string
+          minLength: 5
+        password:
+          type: string
+          minLength: 5
+
+    Token:
+      type: object
+      required: [ accessToken, refreshToken ]
+      properties:
+        accessToken:
+          type: string
+          minLength: 10
+        refreshToken:
+          type: string
+          minLength: 10
+
+    RefreshToken:
+      type: object
+      required: [ token ]
+      properties:
+        token:
+          type: string
+          minLength: 5
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - CUSTOMER
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 5
+        firstName:
+          type: string
+          minLength: 3
+        lastName:
+          type: string
+          minLength: 3
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 10
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

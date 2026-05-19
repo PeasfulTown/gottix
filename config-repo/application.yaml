@@ -55,13 +55,13 @@ security:
   oauth2:
     resourceserver:
       jwt:
-        secret-key: ThisIsADevSecretKeyThatMustBeAtLeast256BitsLongForHS256Algorithm
+        secret-key: VGhpc0lzQURldlNlY3JldEtleVRoYXRNdXN0QmVBdExlYXN0MjU2Qml0c0xvbmdGb3JIUzI1NkFsZ29yaXRobQ==
 
 jwt:
-  secret: ThisIsADevSecretKeyThatMustBeAtLeast256BitsLongForHS256Algorithm
+  secret: VGhpc0lzQURldlNlY3JldEtleVRoYXRNdXN0QmVBdExlYXN0MjU2Qml0c0xvbmdGb3JIUzI1NkFsZ29yaXRobQ==
   expiration-ms: 86400000        # 24 h
   refresh-expiration-ms: 604800000  # 7 d
 
 logging:
   level:
-    org.springframework.security: WARN
+    org.springframework.security: DEBUG

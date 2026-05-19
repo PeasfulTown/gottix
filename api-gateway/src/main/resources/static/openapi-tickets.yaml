@@ -1,0 +1,771 @@
+openapi: 3.0.1
+info:
+  title: Gottix Customer Support
+  description: |
+    Gottix customer support platform
+  contact:
+    email: emrin4@gmail.com
+  license:
+    name: MIT
+    url: https://mit-license.org/
+  version: 0.0.1
+
+servers:
+  - url: /
+
+tags:
+  - name: ticket
+    description: Tickets management
+
+security:
+  - BearerAuth: []
+
+paths:
+
+  # ============================================================
+  # TICKETS
+  # ============================================================
+
+  /api/v1/tickets:
+
+    get:
+      tags: [ ticket ]
+      summary: Get all tickets, paginated (agent, admin)
+      operationId: getAllTickets
+      parameters:
+        - $ref: '#/components/parameters/StatusQuery'
+        - $ref: '#/components/parameters/PriorityQuery'
+        - $ref: '#/components/parameters/PageNumberQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
+        - $ref: '#/components/parameters/SortByQuery'
+        - $ref: '#/components/parameters/SortOrderQuery'
+      responses:
+        '200':
+          $ref: '#/components/responses/PagedTicketSummaryResponse'
+
+    post:
+      tags: [ ticket ]
+      summary: Create ticket (customer, agent, admin)
+      operationId: createTicket
+      requestBody:
+        $ref: '#/components/requestBodies/TicketCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SingleTicketResponse'
+
+  /api/v1/tickets/{ticketId}:
+
+    get:
+      tags: [ ticket ]
+      summary: Get ticket by ID (customer owner, agent, admin)
+      operationId: getTicket
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleTicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [ ticket ]
+      summary: Update ticket by ID (agent, admin)
+      operationId: updateTicket
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      requestBody:
+        $ref: '#/components/requestBodies/TicketUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleTicketSummaryResponse'
+
+    delete:
+      tags: [ ticket ]
+      summary: Delete ticket by ID (customer owner, agent, admin)
+      operationId: deleteTicket
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+  /api/v1/tickets/{ticketId}/assign:
+
+    patch:
+      tags: [ ticket ]
+      summary: Assign ticket to agent (agent, admin)
+      description: Lets agent and admin assign ticket to themselves, or an admin to assign ticket
+        to an agent, an agent cannot assign a ticket to another agent
+      operationId: assignTicketToAgent
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      requestBody:
+        $ref: '#/components/requestBodies/TicketAssignRequest'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+  /api/v1/tickets/{ticketId}/status:
+
+    patch:
+      tags: [ ticket ]
+      summary: Update ticket status (agent, admin)
+      operationId: updateTicketStatus
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      requestBody:
+        $ref: '#/components/requestBodies/TicketStatusUpdateRequest'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+  /api/v1/tickets/{ticketId}/priority:
+
+    patch:
+      tags: [ ticket ]
+      summary: Update ticket priority (customer owner, agent, admin)
+      operationId: updateTicketPriority
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      requestBody:
+        $ref: '#/components/requestBodies/TicketPriorityUpdateRequest'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+  /api/v1/tickets/{ticketId}/reopen:
+
+    post:
+      tags: [ ticket ]
+      summary: Reopen closed ticket
+      operationId: reopenTicket
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      requestBody:
+        $ref: '#/components/requestBodies/TicketReopenRequest'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+  /api/v1/tickets/{ticketId}/comments:
+
+    post:
+      tags: [ ticket ]
+      summary: Create ticket comment
+      operationId: createTicketComment
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+      requestBody:
+        $ref: '#/components/requestBodies/CommentCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SingleCommentResponse'
+
+  /api/v1/tickets/{ticketId}/comments/{commentId}:
+
+    patch:
+      tags: [ ticket ]
+      summary: Edit own comment (owner)
+      operationId: editTicketComment
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+        - $ref: '#/components/parameters/CommentIdPath'
+      requestBody:
+        $ref: '#/components/requestBodies/CommentEditRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleCommentResponse'
+
+    delete:
+      tags: [ ticket ]
+      summary: Delete comment (customer owner, admin)
+      operationId: deleteTicketComment
+      parameters:
+        - $ref: '#/components/parameters/TicketIdPath'
+        - $ref: '#/components/parameters/CommentIdPath'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+  /api/v1/tickets/assigned:
+
+    get:
+      tags: [ ticket ]
+      summary: Get agent's assigned tickets, paginated (agent)
+      operationId: getAssignedTickets
+      parameters:
+        - $ref: '#/components/parameters/StatusQuery'
+        - $ref: '#/components/parameters/PriorityQuery'
+        - $ref: '#/components/parameters/SortByQuery'
+        - $ref: '#/components/parameters/SortOrderQuery'
+        - $ref: '#/components/parameters/PageNumberQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
+      responses:
+        '200':
+          $ref: '#/components/responses/PagedTicketSummaryResponse'
+
+  /api/v1/tickets/me:
+
+    get:
+      tags: [ ticket ]
+      summary: Get customer's own created tickets
+      operationId: getCustomerOwnedTickets
+      parameters:
+        - $ref: '#/components/parameters/StatusQuery'
+        - $ref: '#/components/parameters/PriorityQuery'
+        - $ref: '#/components/parameters/SortByQuery'
+        - $ref: '#/components/parameters/SortOrderQuery'
+        - $ref: '#/components/parameters/PageNumberQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
+      responses:
+        '200':
+          $ref: '#/components/responses/PagedTicketSummaryResponse'
+
+components:
+
+  parameters:
+
+    StatusQuery:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/TicketStatus'
+
+    PriorityQuery:
+      name: priority
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/TicketPriority'
+
+    PageNumberQuery:
+      name: pageNumber
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        default: 0
+
+    PageSizeQuery:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        default: 10
+
+    SortByQuery:
+      name: sortBy
+      in: query
+      schema:
+        $ref: '#/components/schemas/SortField'
+        default: "CREATED_AT"
+
+    SortOrderQuery:
+      name: sortOrder
+      in: query
+      schema:
+        $ref: '#/components/schemas/SortOrder'
+        default: "DESC"
+
+    TicketIdPath:
+      name: ticketId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    CommentIdPath:
+      name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  requestBodies:
+
+    RegisterRequest:
+      description: Account register form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterRequest'
+
+    LoginRequest:
+      description: Account login form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginRequest'
+
+    Token:
+      description: Access and refresh token object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+
+    RefreshToken:
+      description: Refresh token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RefreshToken'
+
+    UserUpdateRequest:
+      description: User update form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserUpdateRequest'
+
+    TicketCreateRequest:
+      description: Ticket create request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketCreateRequest'
+
+    TicketUpdateRequest:
+      description: Ticket update requests (title, description, category), all
+        fields optional
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketUpdateRequest'
+
+    TicketAssignRequest:
+      description: Assign ticket request, contains ID of agent to assign the
+        ticket to
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketAssignRequest'
+
+    TicketStatusUpdateRequest:
+      description: Ticket status update request, contains 'status' field
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketStatusUpdateRequest'
+
+    TicketPriorityUpdateRequest:
+      description: Ticket priority update request, contains 'priority' field
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketPriorityUpdateRequest'
+
+    TicketReopenRequest:
+      description: Ticket reopen request, contains reason for reopening ticket
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketReopenRequest'
+
+    CommentCreateRequest:
+      description: Ticket comment create request, contains body of the comment
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CommentCreateRequest'
+
+    CommentEditRequest:
+      description: Ticket comment edit request, contains body of the new comment
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CommentEditRequest'
+
+  responses:
+
+    ProblemDetail:
+      description: Api error detail response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Token:
+      description: access and refresh tokens
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+
+    SingleUser:
+      description: User object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+
+    PagedUser:
+      description: Paged user response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PagedUserResponse'
+
+    PagedTicketSummaryResponse:
+      description: Paginated ticket summaries, comments and descriptions are
+        not included to keep it lean
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PagedTicketSummaryResponse'
+
+    SingleTicketSummaryResponse:
+      description: Ticket summary object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketSummary'
+
+    SingleTicketResponse:
+      description: Ticket object with embedded comments
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Ticket'
+
+    SingleCommentResponse:
+      description: Ticket comment object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Comment'
+
+    NoContent:
+      description: Successful request, returns no content
+      content: {}
+
+    NotFound:
+      description: Resource not found error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+
+    ProblemDetail:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Not Found"
+        status:
+          type: integer
+          example: 404
+        detail:
+          type: string
+          example: "Ticket not found by ID: abc123"
+        instance:
+          type: string
+          format: uri
+          example: "/api/v1/tickets/abc123"
+      required: [ status ]
+
+    ResponsePage:
+      type: object
+      properties:
+        size:
+          type: integer
+        number:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    PagedResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        page:
+          $ref: '#/components/schemas/ResponsePage'
+
+    PagedUserResponse:
+      allOf:
+        - $ref: '#/components/schemas/PagedResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      required: [ email, password, firstName, lastName, phone ]
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 5
+        password:
+          type: string
+          format: password
+          minLength: 5
+        firstName:
+          type: string
+          minLength: 3
+        lastName:
+          type: string
+          minLength: 3
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 10
+
+    LoginRequest:
+      type: object
+      required: [ email, password ]
+      properties:
+        email:
+          type: string
+          minLength: 5
+        password:
+          type: string
+          minLength: 5
+
+    Token:
+      type: object
+      required: [ accessToken, refreshToken ]
+      properties:
+        accessToken:
+          type: string
+          minLength: 10
+        refreshToken:
+          type: string
+          minLength: 10
+
+    RefreshToken:
+      type: object
+      required: [ token ]
+      properties:
+        token:
+          type: string
+          minLength: 5
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - CUSTOMER
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 5
+        firstName:
+          type: string
+          minLength: 3
+        lastName:
+          type: string
+          minLength: 3
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 10
+
+    TicketStatus:
+      type: string
+      enum:
+        - OPENED
+        - IN_PROGRESS
+        - RESOLVED
+        - CLOSED
+
+    TicketPriority:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+
+    SortField:
+      type: string
+      enum:
+        - CREATED_AT # TODO: ADD MORE SORT FIELDS
+        - UPDATED_AT
+
+    SortOrder:
+      type: string
+      enum:
+        - DESC
+        - ASC
+
+    PagedTicketSummaryResponse:
+      allOf:
+        - $ref: '#/components/schemas/PagedResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/TicketSummary'
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        customerId:
+          type: string
+        assignedAgentId:
+          type: string
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TicketSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        customerId:
+          type: string
+        assignedAgentId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+        authorId:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # TODO: add categories fields, and maybe additionalProperties field as
+    # dynamic properties
+    TicketCreateRequest:
+      type: object
+      required: [ title, description, priority, customerId ]
+      properties:
+        title:
+          type: string
+          minLength: 5
+        description:
+          type: string
+          minLength: 5
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        customerId:
+          type: string
+          minLength: 10
+
+    TicketUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+
+    TicketAssignRequest:
+      type: object
+      properties:
+        agentId:
+          type: string
+
+    TicketStatusUpdateRequest:
+      type: object
+      required: [ status ]
+      properties:
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+
+    TicketPriorityUpdateRequest:
+      type: object
+      required: [ priority ]
+      properties:
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+
+    TicketReopenRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    CommentCreateRequest:
+      type: object
+      required: [ body ]
+      properties:
+        body:
+          type: string
+          minLength: 1
+
+    CommentEditRequest:
+      type: object
+      required: [ body ]
+      properties:
+        body:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: Bearer
+      bearerFormat: JWT

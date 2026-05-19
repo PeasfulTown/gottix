@@ -36,6 +36,10 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/auth/token/renew").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/openapi-*.yaml").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
