@@ -168,6 +168,21 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
+    public Ticket createCustomerTicket(String userId, TicketCreateRequest req) {
+        TicketEntity te = TicketEntity.builder()
+                .title(req.getTitle())
+                .description(req.getDescription())
+                .priority(TicketEntity.TicketPriority.fromValue(req.getPriority().getValue()))
+                .customerId(UUID.fromString(userId))
+                .build();
+
+        te = ticketRepo.save(te);
+        outboxService.saveTicketToOutbox(te, EventType.CREATE);
+
+        return ticketMapper.toModel(te);
+    }
+
+    @Override
     public TicketSummary updateTicket(
             String userId,
             String userRole,

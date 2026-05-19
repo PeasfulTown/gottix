@@ -122,10 +122,10 @@ public class TicketController implements TicketApi {
             String xUserId,
             String xUserRole,
             TicketCreateRequest ticketCreateRequest) throws Exception {
-        if (xUserRole.equals("CUSTOMER") && !xUserId.equals(ticketCreateRequest.getCustomerId()))
-            throw new ForbiddenException("user not allowed to create ticket for another customer");
-
-        return status(HttpStatus.CREATED).body(ticketService.createTicket(ticketCreateRequest));
+        if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
+            return status(HttpStatus.CREATED).body(ticketService.createTicket(ticketCreateRequest));
+        else
+            return status(HttpStatus.CREATED).body(ticketService.createCustomerTicket(xUserId, ticketCreateRequest));
     }
 
     @Override

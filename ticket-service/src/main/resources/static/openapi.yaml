@@ -573,7 +573,7 @@ components:
     # dynamic properties
     TicketCreateRequest:
       type: object
-      required: [ title, description, priority, customerId ]
+      required: [ title, description, priority ]
       properties:
         title:
           type: string

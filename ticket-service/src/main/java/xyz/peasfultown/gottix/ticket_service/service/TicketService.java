@@ -26,6 +26,8 @@ public interface TicketService {
 
     Ticket createTicket(TicketCreateRequest ticketCreateRequest);
 
+    Ticket createCustomerTicket(String userId, TicketCreateRequest ticketCreateRequest);
+
     TicketSummary updateTicket(String userId, String userRole, String ticketId, TicketUpdateRequest ticketUpdateRequest);
 
     void deleteTicket(String ticketId);
