@@ -48,9 +48,12 @@ public class SecurityConfig {
     private ReactiveJwtDecoder jwtDecoder() {
         SecretKeySpec secretKey = new SecretKeySpec(
                 Decoders.BASE64.decode(secret),
-                MacAlgorithm.HS256.getName()
+                "HmacSHA256"
         );
-        return NimbusReactiveJwtDecoder.withSecretKey(secretKey).build();
+        return NimbusReactiveJwtDecoder
+                .withSecretKey(secretKey)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
     }
 
     private Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter() {
