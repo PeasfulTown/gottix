@@ -121,6 +121,22 @@ paths:
           $ref: '#/components/responses/NoContent'
 
 components:
+  parameters:
+
+    PageNumberQuery:
+      name: pageNumber
+      in: query
+      schema:
+        type: integer
+        format: int32
+        default: 0
+
+    PageSizeQuery:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        format: int32
 
   requestBodies:
 

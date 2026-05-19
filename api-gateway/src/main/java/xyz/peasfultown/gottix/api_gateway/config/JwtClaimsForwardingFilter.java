@@ -36,6 +36,6 @@ public class JwtClaimsForwardingFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1;  // run before other filters
+        return 10;  // run before other filters
     }
 }
