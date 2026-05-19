@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface OutboxRepository extends JpaRepository<OutboxEntity, UUID> {
     @Query(value = """
-            SELECT * FROM outbox
+            SELECT * FROM ticket.outbox
             WHERE entity_type = 'TICKET'
                 AND status = 'PENDING'
             ORDER BY created_at ASC
@@ -21,7 +21,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEntity, UUID> {
     List<OutboxEntity> findOldestPendingTickets(int batchSize);
 
     @Query(value = """
-            SELECT * FROM outbox
+            SELECT * FROM ticket.outbox
             WHERE entity_type = 'COMMENT'
                 AND status = 'PENDING'
             ORDER BY created_at ASC
@@ -31,7 +31,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEntity, UUID> {
     List<OutboxEntity> findOldestPendingComments(int batchSize);
 
     @Query(value = """
-            SELECT * FROM outbox
+            SELECT * FROM ticket.outbox
             WHERE status = 'PROCESSED'
             ORDER BY updated_at ASC
             FOR UPDATE SKIP LOCKED

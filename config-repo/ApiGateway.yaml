@@ -2,14 +2,49 @@ server.port: 8080
 spring:
 
   cloud.gateway.server.webflux.routes:
+
+    # ============================================================
+    # MICROSERVICES ENDPOINTS
+    # ============================================================
+
     - id: auth-service
       uri: lb://AuthService
       predicates:
         - Path=/api/v1/auth/**,/api/v1/users/**
-      filters:
-        - RemoveRequestHeader=Authorization
+
+    - id: ticket-service
+      uri: lb://TicketService
+      predicates:
+        - Path=/api/v1/tickets/**
+
+    - id: search-service
+      uri: lb://SearchService
+      predicates:
+        - Path=/api/v1/search/**
+
+  cloud:
+    gateway:
+      httpserver:
+        wiretap: true
+      httpclient:
+        wiretap: true
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: Authentication service
+        url: /openapi-auth.yaml
+      - name: Tickets service
+        url: /openapi-tickets.yaml
+      - name: Search service
+        url: /openapi-search.yaml
 
 logging:
   level:
     org.springframework.cloud.gateway: TRACE
     org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
+    reactor.netty.http.client: DEBUG

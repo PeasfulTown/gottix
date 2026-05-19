@@ -36,6 +36,10 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/auth/token/renew").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/openapi-*.yaml").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -48,9 +52,12 @@ public class SecurityConfig {
     private ReactiveJwtDecoder jwtDecoder() {
         SecretKeySpec secretKey = new SecretKeySpec(
                 Decoders.BASE64.decode(secret),
-                MacAlgorithm.HS256.getName()
+                "HmacSHA256"
         );
-        return NimbusReactiveJwtDecoder.withSecretKey(secretKey).build();
+        return NimbusReactiveJwtDecoder
+                .withSecretKey(secretKey)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
     }
 
     private Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter() {

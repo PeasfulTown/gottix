@@ -10,10 +10,15 @@ info:
     url: https://mit-license.org/
   version: 0.0.1
 
+server:
+  - url: /
+
 tags:
   - name: ticket
     description: Ticket search endpoint
 
+security:
+  - BearerAuth: []
 
 paths:
   /api/v1/search/tickets:
@@ -22,8 +27,6 @@ paths:
       summary: Search tickets
       operationId: searchTickets
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/SearchStringQuery'
         - $ref: '#/components/parameters/TicketStatusQuery'
         - $ref: '#/components/parameters/TicketPriorityQuery'
@@ -43,8 +46,6 @@ paths:
       summary: Ticket search suggestions
       operationId: searchTicketsSuggestion
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/SearchStringQuery'
         - $ref: '#/components/parameters/SuggestionLimitQuery'
       responses:
@@ -56,28 +57,11 @@ paths:
       tags: [ ticket ]
       summary: Get ticket stats
       operationId: getTicketStats
-      parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
       responses:
         '200':
           $ref: '#/components/responses/TicketStats'
 components:
   parameters:
-
-    UserIdHeader:
-      name: X-User-Id
-      in: header
-      required: true
-      schema:
-        type: string
-
-    UserRoleHeader:
-      name: X-User-Role
-      in: header
-      required: true
-      schema:
-        type: string
 
     SearchStringQuery:
       name: search
@@ -167,7 +151,32 @@ components:
           schema:
             $ref: '#/components/schemas/TicketStats'
 
+    ProblemDetail:
+      description: Api error detail response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
   schemas:
+
+    ProblemDetail:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Not Found"
+        status:
+          type: integer
+          example: 404
+        detail:
+          type: string
+          example: "Ticket not found by ID: abc123"
+        instance:
+          type: string
+          format: uri
+          example: "/api/v1/tickets/abc123"
+      required: [ status ]
 
     TicketStatus:
       type: string
@@ -290,3 +299,9 @@ components:
           additionalProperties:
             type: integer
             format: int64
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

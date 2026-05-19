@@ -18,6 +18,8 @@ public interface SearchService {
 
     SearchSuggestion getCustomerSearchSuggestion(String customerId, String search, Integer limit);
 
+    TicketStats getTicketStats(String userId, String userRole);
+
     // ============================================================
     // INDEXING EVENT HANDLER METHODS
     // ============================================================
@@ -33,4 +35,5 @@ public interface SearchService {
     void indexCommentUpdateEvent(CommentChangeEvent event);
 
     void indexCommentDeleteEvent(CommentChangeEvent event);
+
 }

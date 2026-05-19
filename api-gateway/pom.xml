@@ -27,11 +27,17 @@
 		<url/>
 	</scm>
 	<properties>
+		<springdoc.version>2.8.17</springdoc.version>
 		<java.version>17</java.version>
 		<spring-cloud.version>2025.0.2</spring-cloud.version>
 		<jjwt.version>0.13.0</jjwt.version>
 	</properties>
 	<dependencies>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>

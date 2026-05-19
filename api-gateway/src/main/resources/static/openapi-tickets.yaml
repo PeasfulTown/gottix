@@ -1,9 +1,8 @@
 openapi: 3.0.1
 info:
-  title: Gottix Ticket Service
+  title: Gottix Customer Support
   description: |
-    Handles the customer support ticket management part of 
-    the customer support tickets microservices platform
+    Gottix customer support platform
   contact:
     email: emrin4@gmail.com
   license:
@@ -11,11 +10,21 @@ info:
     url: https://mit-license.org/
   version: 0.0.1
 
+servers:
+  - url: /
+
 tags:
   - name: ticket
-    description: Ticket management
+    description: Tickets management
+
+security:
+  - BearerAuth: []
 
 paths:
+
+  # ============================================================
+  # TICKETS
+  # ============================================================
 
   /api/v1/tickets:
 
@@ -24,8 +33,6 @@ paths:
       summary: Get all tickets, paginated (agent, admin)
       operationId: getAllTickets
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/StatusQuery'
         - $ref: '#/components/parameters/PriorityQuery'
         - $ref: '#/components/parameters/PageNumberQuery'
@@ -40,9 +47,6 @@ paths:
       tags: [ ticket ]
       summary: Create ticket (customer, agent, admin)
       operationId: createTicket
-      parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
       requestBody:
         $ref: '#/components/requestBodies/TicketCreateRequest'
       responses:
@@ -56,8 +60,6 @@ paths:
       summary: Get ticket by ID (customer owner, agent, admin)
       operationId: getTicket
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       responses:
         '200':
@@ -70,8 +72,6 @@ paths:
       summary: Update ticket by ID (agent, admin)
       operationId: updateTicket
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       requestBody:
         $ref: '#/components/requestBodies/TicketUpdateRequest'
@@ -84,8 +84,6 @@ paths:
       summary: Delete ticket by ID (customer owner, agent, admin)
       operationId: deleteTicket
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       responses:
         '204':
@@ -100,8 +98,6 @@ paths:
         to an agent, an agent cannot assign a ticket to another agent
       operationId: assignTicketToAgent
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       requestBody:
         $ref: '#/components/requestBodies/TicketAssignRequest'
@@ -116,9 +112,7 @@ paths:
       summary: Update ticket status (agent, admin)
       operationId: updateTicketStatus
       parameters:
-       - $ref: '#/components/parameters/UserIdHeader'
-       - $ref: '#/components/parameters/UserRoleHeader'
-       - $ref: '#/components/parameters/TicketIdPath'
+        - $ref: '#/components/parameters/TicketIdPath'
       requestBody:
         $ref: '#/components/requestBodies/TicketStatusUpdateRequest'
       responses:
@@ -132,8 +126,6 @@ paths:
       summary: Update ticket priority (customer owner, agent, admin)
       operationId: updateTicketPriority
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       requestBody:
         $ref: '#/components/requestBodies/TicketPriorityUpdateRequest'
@@ -148,8 +140,6 @@ paths:
       summary: Reopen closed ticket
       operationId: reopenTicket
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       requestBody:
         $ref: '#/components/requestBodies/TicketReopenRequest'
@@ -164,8 +154,6 @@ paths:
       summary: Create ticket comment
       operationId: createTicketComment
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
       requestBody:
         $ref: '#/components/requestBodies/CommentCreateRequest'
@@ -180,8 +168,6 @@ paths:
       summary: Edit own comment (owner)
       operationId: editTicketComment
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
         - $ref: '#/components/parameters/CommentIdPath'
       requestBody:
@@ -195,8 +181,6 @@ paths:
       summary: Delete comment (customer owner, admin)
       operationId: deleteTicketComment
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/TicketIdPath'
         - $ref: '#/components/parameters/CommentIdPath'
       responses:
@@ -210,8 +194,6 @@ paths:
       summary: Get agent's assigned tickets, paginated (agent)
       operationId: getAssignedTickets
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/StatusQuery'
         - $ref: '#/components/parameters/PriorityQuery'
         - $ref: '#/components/parameters/SortByQuery'
@@ -229,8 +211,6 @@ paths:
       summary: Get customer's own created tickets
       operationId: getCustomerOwnedTickets
       parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/UserRoleHeader'
         - $ref: '#/components/parameters/StatusQuery'
         - $ref: '#/components/parameters/PriorityQuery'
         - $ref: '#/components/parameters/SortByQuery'
@@ -244,20 +224,6 @@ paths:
 components:
 
   parameters:
-
-    UserIdHeader:
-      name: X-User-Id
-      in: header
-      required: true
-      schema:
-        type: string
-
-    UserRoleHeader:
-      name: X-User-Role
-      in: header
-      required: true
-      schema:
-        type: string
 
     StatusQuery:
       name: status
@@ -276,6 +242,7 @@ components:
     PageNumberQuery:
       name: pageNumber
       in: query
+      required: false
       schema:
         type: integer
         format: int32
@@ -284,10 +251,11 @@ components:
     PageSizeQuery:
       name: pageSize
       in: query
+      required: false
       schema:
         type: integer
         format: int32
-        default: 20
+        default: 10
 
     SortByQuery:
       name: sortBy
@@ -319,6 +287,41 @@ components:
 
   requestBodies:
 
+    RegisterRequest:
+      description: Account register form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterRequest'
+
+    LoginRequest:
+      description: Account login form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginRequest'
+
+    Token:
+      description: Access and refresh token object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+
+    RefreshToken:
+      description: Refresh token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RefreshToken'
+
+    UserUpdateRequest:
+      description: User update form
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserUpdateRequest'
+
     TicketCreateRequest:
       description: Ticket create request body
       content:
@@ -335,7 +338,7 @@ components:
             $ref: '#/components/schemas/TicketUpdateRequest'
 
     TicketAssignRequest:
-      description: Assign ticket request, contains ID of agent to assign the 
+      description: Assign ticket request, contains ID of agent to assign the
         ticket to
       content:
         application/json:
@@ -365,7 +368,7 @@ components:
 
     CommentCreateRequest:
       description: Ticket comment create request, contains body of the comment
-      content: 
+      content:
         application/json:
           schema:
             $ref: '#/components/schemas/CommentCreateRequest'
@@ -379,8 +382,36 @@ components:
 
   responses:
 
+    ProblemDetail:
+      description: Api error detail response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Token:
+      description: access and refresh tokens
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+
+    SingleUser:
+      description: User object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+
+    PagedUser:
+      description: Paged user response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PagedUserResponse'
+
     PagedTicketSummaryResponse:
-      description: Paginated ticket summaries, comments and descriptions are 
+      description: Paginated ticket summaries, comments and descriptions are
         not included to keep it lean
       content:
         application/json:
@@ -424,9 +455,6 @@ components:
     ProblemDetail:
       type: object
       properties:
-        type:
-          type: string
-          example: "about:blank"
         title:
           type: string
           example: "Not Found"
@@ -440,6 +468,129 @@ components:
           type: string
           format: uri
           example: "/api/v1/tickets/abc123"
+      required: [ status ]
+
+    ResponsePage:
+      type: object
+      properties:
+        size:
+          type: integer
+        number:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    PagedResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        page:
+          $ref: '#/components/schemas/ResponsePage'
+
+    PagedUserResponse:
+      allOf:
+        - $ref: '#/components/schemas/PagedResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      required: [ email, password, firstName, lastName, phone ]
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 5
+        password:
+          type: string
+          format: password
+          minLength: 5
+        firstName:
+          type: string
+          minLength: 3
+        lastName:
+          type: string
+          minLength: 3
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 10
+
+    LoginRequest:
+      type: object
+      required: [ email, password ]
+      properties:
+        email:
+          type: string
+          minLength: 5
+        password:
+          type: string
+          minLength: 5
+
+    Token:
+      type: object
+      required: [ accessToken, refreshToken ]
+      properties:
+        accessToken:
+          type: string
+          minLength: 10
+        refreshToken:
+          type: string
+          minLength: 10
+
+    RefreshToken:
+      type: object
+      required: [ token ]
+      properties:
+        token:
+          type: string
+          minLength: 5
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - CUSTOMER
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 5
+        firstName:
+          type: string
+          minLength: 3
+        lastName:
+          type: string
+          minLength: 3
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 10
 
     TicketStatus:
       type: string
@@ -467,31 +618,6 @@ components:
       enum:
         - DESC
         - ASC
-
-    ResponsePage:
-      type: object
-      properties:
-        size:
-          type: integer
-          format: int32
-        number:
-          type: integer
-          format: int32
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-
-    PagedResponse:
-      type: object
-      properties:
-        content:
-          type: array
-          items: {}
-        page:
-          $ref: '#/components/schemas/ResponsePage'
 
     PagedTicketSummaryResponse:
       allOf:
@@ -573,7 +699,7 @@ components:
     # dynamic properties
     TicketCreateRequest:
       type: object
-      required: [ title, description, priority ]
+      required: [ title, description, priority, customerId ]
       properties:
         title:
           type: string
@@ -637,3 +763,9 @@ components:
       properties:
         body:
           type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: Bearer
+      bearerFormat: JWT

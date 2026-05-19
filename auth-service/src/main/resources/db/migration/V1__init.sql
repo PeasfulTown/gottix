@@ -1,4 +1,6 @@
-CREATE TABLE "user" (
+CREATE SCHEMA IF NOT EXISTS auth;
+
+CREATE TABLE IF NOT EXISTS auth."user" (
     id          UUID PRIMARY KEY,
 
     email       VARCHAR(50) NOT NULL UNIQUE,
@@ -13,7 +15,7 @@ CREATE TABLE "user" (
 
 );
 
-CREATE TABLE refresh_token (
+CREATE TABLE IF NOT EXISTS auth.refresh_token (
     id          UUID PRIMARY KEY,
 
     user_id     UUID NOT NULL,
@@ -24,5 +26,5 @@ CREATE TABLE refresh_token (
     expires_at  TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT fk_refresh_token_user_id FOREIGN KEY (user_id)
-        REFERENCES "user" (id)
+        REFERENCES auth."user" (id)
 );

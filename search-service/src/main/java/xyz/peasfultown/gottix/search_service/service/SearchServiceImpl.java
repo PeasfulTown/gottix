@@ -1,12 +1,16 @@
 package xyz.peasfultown.gottix.search_service.service;
 
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
+import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchAggregations;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHitSupport;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -25,7 +29,9 @@ import xyz.peasfultown.gottix.search_service.mapper.TicketMapper;
 import xyz.peasfultown.gottix.search_service.model.*;
 import xyz.peasfultown.gottix.search_service.repository.TicketRepository;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -136,6 +142,38 @@ public class SearchServiceImpl implements SearchService {
                         .toList())
                 .build();
     }
+    @Override public TicketStats getTicketStats(String userId, String userRole) {
+        NativeQuery nq = NativeQuery.builder()
+                .withQuery(q -> q.bool(b -> {
+                    if (userRole.equals("AGENT"))
+                        withAssignedAgentId(b, userId);
+                    else if (userRole.equals("CUSTOMER"))
+                        withCustomerId(b, userId);
+                    return b;
+                }))
+                .withMaxResults(0)
+                .withAggregation(
+                        "by_status",
+                        Aggregation.of(a -> a.terms(t -> t.field("status")))
+                )
+                .withAggregation(
+                        "by_priority",
+                        Aggregation.of(a -> a.terms(t -> t.field("priority")))
+                )
+                .build();
+
+        SearchHits<TicketDocument> hits = ops.search(nq, TicketDocument.class);
+
+        ElasticsearchAggregations aggregations = (ElasticsearchAggregations) hits.getAggregations();
+
+        Map<String, Long> byStatus = extractTermCounts(aggregations, "by_status");
+        Map<String, Long> byPriority = extractTermCounts(aggregations, "by_priority");
+
+        return TicketStats.builder()
+                .statusCount(byStatus)
+                .priorityCounts(byPriority)
+                .build();
+    }
 
     // ============================================================
     // QUERY BUILDER
@@ -185,7 +223,7 @@ public class SearchServiceImpl implements SearchService {
             return;
         b.filter(f -> f
                 .term(t -> t
-                        .field("customerId")
+                        .field("assignedAgentId")
                         .value(assignedAgentId)));
     }
 
@@ -239,6 +277,23 @@ public class SearchServiceImpl implements SearchService {
                                 .query(text)
                                 .analyzer("standard")
                                 .fuzziness("AUTO")));
+    }
+
+    private Map<String, Long> extractTermCounts(ElasticsearchAggregations aggregations, String name) {
+        return aggregations.aggregationsAsMap()
+                .get(name)
+                .aggregation()
+                .getAggregate()
+                .sterms()
+                .buckets()
+                .array()
+                .stream()
+                .collect(Collectors.toMap(
+                        bucket -> bucket.key().stringValue(),
+                        StringTermsBucket::docCount,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
     }
 
     // ============================================================
