@@ -1,12 +1,12 @@
 package xyz.peasfultown.gottix.search_service.service;
 
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
-import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHitSupport;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -48,15 +48,16 @@ public class SearchServiceImpl implements SearchService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
-        NativeQueryBuilder nq = NativeQuery.builder();
-        withCommonFields(nq, search, status, priority);
-
-        NativeQuery query = nq
+        NativeQuery nq = NativeQuery.builder()
+                .withQuery(q -> q.bool(b -> {
+                    withCommonFields(b, search, status, priority);
+                    return b;
+                }))
                 .withPageable(buildPageable(sortBy, sortOrder, pageNumber, pageSize))
                 .build();
 
-        SearchHits<TicketDocument> hits = ops.search(query, TicketDocument.class);
-        SearchPage<TicketDocument> page = SearchHitSupport.searchPageFor(hits, query.getPageable());
+        SearchHits<TicketDocument> hits = ops.search(nq, TicketDocument.class);
+        SearchPage<TicketDocument> page = SearchHitSupport.searchPageFor(hits, nq.getPageable());
 
         return buildPagedTicketResponse(page);
     }
@@ -71,17 +72,17 @@ public class SearchServiceImpl implements SearchService {
             SortOrder sortOrder,
             Integer pageNumber,
             Integer pageSize) {
-        NativeQueryBuilder nq = NativeQuery.builder();
-
-        withCommonFields(nq, search, status, priority);
-        withCustomerId(nq, customerId);
-
-        NativeQuery query = nq
+        NativeQuery nq = NativeQuery.builder()
+                .withQuery(q -> q.bool(b -> {
+                    withCommonFields(b, search, status, priority);
+                    withCustomerId(b, customerId);
+                    return b;
+                }))
                 .withPageable(buildPageable(sortBy, sortOrder, pageNumber, pageSize))
                 .build();
 
-        SearchHits<TicketDocument> hits = ops.search(query, TicketDocument.class);
-        SearchPage<TicketDocument> page = SearchHitSupport.searchPageFor(hits, query.getPageable());
+        SearchHits<TicketDocument> hits = ops.search(nq, TicketDocument.class);
+        SearchPage<TicketDocument> page = SearchHitSupport.searchPageFor(hits, nq.getPageable());
 
         return buildPagedTicketResponse(page);
     }
@@ -90,9 +91,15 @@ public class SearchServiceImpl implements SearchService {
     public SearchSuggestion getSearchSuggestion(
             String search,
             Integer limit) {
-        NativeQueryBuilder nq = NativeQuery.builder();
-        withTitleSuggestion(nq, search, limit);
-        SearchHits<TicketDocument> hits = ops.search(nq.build(), TicketDocument.class);
+        NativeQuery nq = NativeQuery.builder()
+                .withQuery(q -> q
+                        .bool(b -> {
+                            withTitleSuggestion(b, search);
+                            return b;
+                        }))
+                .withPageable(PageRequest.of(0, limit))
+                .build();
+        SearchHits<TicketDocument> hits = ops.search(nq, TicketDocument.class);
         return SearchSuggestion.builder()
                 .suggestions(hits.getSearchHits()
                         .stream()
@@ -121,79 +128,70 @@ public class SearchServiceImpl implements SearchService {
         );
     }
 
-    private void withCommonFields(NativeQueryBuilder nq,
+    private void withCommonFields(BoolQuery.Builder b,
                                   String q,
                                   xyz.peasfultown.gottix.search_service.model.TicketStatus status,
                                   xyz.peasfultown.gottix.search_service.model.TicketPriority priority
     ) {
         if (q != null && !q.isBlank())
-            withFullTextSearch(nq, q);
+            withFullTextSearch(b, q);
 
         if (status != null)
-            withStatus(nq, status);
+            withStatus(b, status);
 
         if (priority != null)
-            withPriority(nq, priority);
+            withPriority(b, priority);
     }
 
-    private void withCustomerId(NativeQueryBuilder nq, String customerId) {
-        nq.withQuery(q -> q
+    private void withCustomerId(BoolQuery.Builder b, String customerId) {
+            b.filter(f -> f
                 .term(t -> t
                         .field("customerId")
-                        .value(customerId))
-        );
+                        .value(customerId)));
     }
 
     /* full text search matches title, description, and comment bodies */
-    private void withFullTextSearch(NativeQueryBuilder nq, String queryText) {
-        nq.withQuery(q -> q
-                .bool(b -> b
-                        .should(s -> s
-                                .match(mt -> mt
-                                        .field("title")
-                                        .query(queryText)
-                                        .fuzziness("AUTO")))
-                        .should(s -> s
-                                .match(mt -> mt
-                                        .field("description")
-                                        .query(queryText)
-                                        .fuzziness("AUTO")))
-                        .should(s -> s
-                                .nested(n -> n
-                                        .path("comments")
-                                        .query(neq -> neq
-                                                .match(ma -> ma
-                                                        .field("comments.body")
-                                                        .query(queryText)))))
-                ));
+    private void withFullTextSearch(BoolQuery.Builder b, String queryText) {
+        b.should(s -> s
+                .match(mt -> mt
+                            .field("title")
+                            .query(queryText)
+                            .fuzziness("AUTO")))
+            .should(s -> s
+                    .match(mt -> mt
+                            .field("description")
+                            .query(queryText)
+                            .fuzziness("AUTO")))
+            .should(s -> s
+                    .nested(n -> n
+                            .path("comments")
+                            .query(neq -> neq
+                                    .match(ma -> ma
+                                            .field("comments.body")
+                                            .query(queryText)))));
     }
 
-    private void withStatus(NativeQueryBuilder nq, xyz.peasfultown.gottix.search_service.model.TicketStatus status) {
-        nq.withQuery(q -> q
-                .bool(b -> b
-                        .filter(f -> f
-                                .term(t -> t
-                                        .field("status")
-                                        .value(status.name())))));
+    private void withStatus(BoolQuery.Builder b, xyz.peasfultown.gottix.search_service.model.TicketStatus status) {
+        b.filter(f -> f
+                .term(t -> t
+                        .field("status")
+                        .value(status.name())));
     }
 
-    private void withPriority(NativeQueryBuilder nq, xyz.peasfultown.gottix.search_service.model.TicketPriority priority) {
-        nq.withQuery(q -> q
-                .bool(b -> b
-                        .filter(f -> f
-                                .term(t -> t
-                                        .field("priority")
-                                        .value(priority.name())))));
+    private void withPriority(BoolQuery.Builder b, xyz.peasfultown.gottix.search_service.model.TicketPriority priority) {
+        b.filter(f -> f
+                .term(t -> t
+                        .field("priority")
+                        .value(priority.name())));
     }
 
-    private void withTitleSuggestion(NativeQueryBuilder nq, String text, int limit) {
-        nq.withQuery(q -> q
-                .match(m -> m
-                        .field("title")
-                        .query(text)
-                        .analyzer("standard")
-                        .fuzziness("AUTO")))
-                .withPageable(PageRequest.of(0, limit));
+    private void withTitleSuggestion(BoolQuery.Builder b, String text) {
+            b.must(m -> m
+                            .match(ma -> ma
+                                    .field("title")
+                                    .query(text)
+                                    .analyzer("standard")
+                                    .fuzziness("AUTO")));
     }
 
     // ============================================================
