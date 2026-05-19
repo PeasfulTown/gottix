@@ -133,8 +133,6 @@ components:
         type: integer
         format: int32
 
-#  requestBodies:
-
   responses:
 
     PagedTicketResponse:

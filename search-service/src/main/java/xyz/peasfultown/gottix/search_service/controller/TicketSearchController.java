@@ -40,7 +40,7 @@ public class TicketSearchController implements TicketApi {
             String xUserId,
             String xUserRole,
             String search,
-            Integer limit) throws Exception {
+            @RequestParam(defaultValue = "5") Integer limit) throws Exception {
         if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
             return ok(searchService.getSearchSuggestion(search, limit));
         else
