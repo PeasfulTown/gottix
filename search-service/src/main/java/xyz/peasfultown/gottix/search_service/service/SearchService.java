@@ -16,6 +16,8 @@ public interface SearchService {
 
     SearchSuggestion getSearchSuggestion(String search, Integer limit);
 
+    SearchSuggestion getCustomerSearchSuggestion(String customerId, String search, Integer limit);
+
     // ============================================================
     // INDEXING EVENT HANDLER METHODS
     // ============================================================

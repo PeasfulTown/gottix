@@ -109,6 +109,30 @@ public class SearchServiceImpl implements SearchService {
                 .build();
     }
 
+    @Override
+    public SearchSuggestion getCustomerSearchSuggestion(
+            String customerId,
+            String search,
+            Integer limit) {
+        NativeQuery nq = NativeQuery.builder()
+                .withQuery(q -> q
+                        .bool(b -> {
+                            withCustomerId(b, customerId);
+                            withTitleSuggestion(b, search);
+                            return b;
+                        }))
+                .withPageable(PageRequest.of(0, limit))
+                .build();
+        SearchHits<TicketDocument> hits = ops.search(nq, TicketDocument.class);
+        return SearchSuggestion.builder()
+                .suggestions(hits.getSearchHits()
+                        .stream()
+                        .map(h -> h.getContent().getTitle())
+                        .distinct()
+                        .toList())
+                .build();
+    }
+
     // ============================================================
     // QUERY BUILDER
     // ============================================================

@@ -39,6 +39,9 @@ public class TicketSearchController implements TicketApi {
             String xUserRole,
             String search,
             Integer limit) throws Exception {
-        return ok(searchService.getSearchSuggestion(search, limit));
+        if (xUserRole.equals("ADMIN") || xUserRole.equals("AGENT"))
+            return ok(searchService.getSearchSuggestion(search, limit));
+        else
+            return ok(searchService.getCustomerSearchSuggestion(xUserId, search, limit));
     }
 }
