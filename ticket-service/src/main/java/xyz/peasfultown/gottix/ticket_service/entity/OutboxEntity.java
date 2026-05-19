@@ -11,7 +11,7 @@ import org.hibernate.type.SqlTypes;
 import java.util.UUID;
 
 @Entity
-@Table(name = "outbox")
+@Table(name = "outbox", schema = "ticket")
 @Getter
 @Setter
 @AllArgsConstructor

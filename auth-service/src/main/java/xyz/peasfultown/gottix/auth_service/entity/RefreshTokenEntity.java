@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "refresh_token")
+@Table(name = "refresh_token", schema = "auth")
 @Setter
 @Getter
 @NoArgsConstructor
