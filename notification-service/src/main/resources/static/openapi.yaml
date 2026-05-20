@@ -1,8 +1,8 @@
 openapi: 3.0.1
 info:
-  title: Gottix Search Service
+  title: Gottix Notification Service
   description: |
-    Handles the search component of the customer support tickets microservices platform
+    Notifies users of ticket changes
   contact:
     email: emrin4@gmail.com
   license:
@@ -80,7 +80,7 @@ components:
         type: string
 
     NotificationIdPath:
-      name: notificationId
+      name: notifId
       in: path
       required: true
       schema:
@@ -126,6 +126,7 @@ components:
       schema:
         type: integer
         format: int32
+        default: 10
 
   requestBodies:
 
@@ -162,6 +163,7 @@ components:
       enum:
         - ASC
         - DESC
+      default: ASC
 
     ResponsePage:
       type: object
@@ -218,7 +220,7 @@ components:
           type: string
         message:
           type: string
-        notificationType:
+        type:
           $ref: '#/components/schemas/NotificationType'
         ticketId:
           type: string

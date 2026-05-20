@@ -1,11 +1,14 @@
 package xyz.peasfultown.gottix.notification_service.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import xyz.peasfultown.gottix.notification_service.dto.TicketChangeNotificationEvent;
 import xyz.peasfultown.gottix.notification_service.entity.NotificationEntity;
 import xyz.peasfultown.gottix.notification_service.mapper.NotificationMapper;
 import xyz.peasfultown.gottix.notification_service.model.*;
@@ -16,7 +19,9 @@ import java.util.UUID;
 import static xyz.peasfultown.gottix.notification_service.repository.specification.NotificationSpecification.hasIsRead;
 import static xyz.peasfultown.gottix.notification_service.repository.specification.NotificationSpecification.hasType;
 
+@Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notifRepo;
@@ -40,7 +45,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         Page<NotificationEntity> page = notifRepo.findAll(
                 hasIsRead(isRead)
-                        .and(hasType(NotificationEntity.NotificationType.valueOf(type.getValue()))),
+                        .and(hasType(type == null ? null : NotificationEntity.NotificationType.valueOf(type.getValue()))),
                 pageable);
 
         return PagedNotificationResponse.builder()
@@ -78,5 +83,18 @@ public class NotificationServiceImpl implements NotificationService {
     public void delete(
             String notificationId) {
         notifRepo.deleteById(UUID.fromString(notificationId));
+    }
+
+    @Override
+    public void createNotification(
+            TicketChangeNotificationEvent event) {
+        NotificationEntity ne = NotificationEntity.builder()
+                .ticketId(UUID.fromString(event.getTicketId()))
+                .userId(UUID.fromString(event.getReceiverId()))
+                .message(event.getMessage())
+                .type(NotificationEntity.NotificationType.valueOf(event.getType().toString()))
+                .build();
+        ne = notifRepo.save(ne);
+        log.debug("saved notification {}", ne);
     }
 }

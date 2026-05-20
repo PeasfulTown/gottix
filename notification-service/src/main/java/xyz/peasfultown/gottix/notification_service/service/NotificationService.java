@@ -1,5 +1,6 @@
 package xyz.peasfultown.gottix.notification_service.service;
 
+import xyz.peasfultown.gottix.notification_service.dto.TicketChangeNotificationEvent;
 import xyz.peasfultown.gottix.notification_service.model.BatchNotificationIdRequest;
 import xyz.peasfultown.gottix.notification_service.model.NotificationType;
 import xyz.peasfultown.gottix.notification_service.model.PagedNotificationResponse;
@@ -15,4 +16,6 @@ public interface NotificationService {
 
     void delete(String notificationId);
 
+    void createNotification(
+            TicketChangeNotificationEvent event);
 }

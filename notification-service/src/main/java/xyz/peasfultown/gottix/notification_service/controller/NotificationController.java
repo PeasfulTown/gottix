@@ -3,6 +3,8 @@ package xyz.peasfultown.gottix.notification_service.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.peasfultown.gottix.notifcation_service.NotificationApi;
 import xyz.peasfultown.gottix.notification_service.model.BatchNotificationIdRequest;
@@ -40,17 +42,17 @@ public class NotificationController implements NotificationApi {
             String xUserId,
             Boolean isRead,
             NotificationType type,
-            SortOrder sortOrder,
-            Integer pageNumber,
-            Integer pageSize) throws Exception {
+            @RequestParam(defaultValue = "DESC") SortOrder sortOrder,
+            @RequestParam(defaultValue = "0") Integer pageNumber,
+            @RequestParam(defaultValue = "10") Integer pageSize) throws Exception {
         return ok(notifService.getUserNotifications(xUserId, isRead, type, sortOrder, pageNumber, pageSize));
     }
 
     @Override
     public ResponseEntity<Void> markNotificationAsRead(
             String xUserId,
-            String notificationId) throws Exception {
-        notifService.markAsRead(notificationId);
+            @PathVariable("notifId") String notifId) throws Exception {
+        notifService.markAsRead(notifId);
         return status(HttpStatus.NO_CONTENT).build();
     }
 
