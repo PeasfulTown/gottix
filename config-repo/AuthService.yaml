@@ -5,3 +5,7 @@ spring:
   data:
     redis:
       url: ${DB_REDIS_URL}
+
+  flyway:
+    default-schema: auth
+    create-schema: true

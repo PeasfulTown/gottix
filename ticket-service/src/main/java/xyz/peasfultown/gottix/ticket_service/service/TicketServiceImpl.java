@@ -1,8 +1,14 @@
 package xyz.peasfultown.gottix.ticket_service.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import xyz.peasfultown.gottix.ticket_service.config.RabbitMqConfig;
+import xyz.peasfultown.gottix.ticket_service.dto.NotificationType;
+import xyz.peasfultown.gottix.ticket_service.dto.TicketChangeNotificationEvent;
 import xyz.peasfultown.gottix.ticket_service.entity.CommentEntity;
 import xyz.peasfultown.gottix.ticket_service.entity.EventType;
 import xyz.peasfultown.gottix.ticket_service.entity.TicketEntity;
@@ -38,6 +47,9 @@ public class TicketServiceImpl implements TicketService {
 
     private final TicketMapper ticketMapper;
     private final CommentMapper commentMapper;
+
+    private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objMapper;
 
     // ======================================================
     // TICKET GET
@@ -163,6 +175,7 @@ public class TicketServiceImpl implements TicketService {
 
         te = ticketRepo.save(te);
         outboxService.saveTicketToOutbox(te, EventType.CREATE);
+        sendNotification(buildTicketCreateNotification(te.getId().toString(), req.getCustomerId()));
 
         return ticketMapper.toModel(te);
     }
@@ -178,6 +191,7 @@ public class TicketServiceImpl implements TicketService {
 
         te = ticketRepo.save(te);
         outboxService.saveTicketToOutbox(te, EventType.CREATE);
+        sendNotification(buildTicketCreateNotification(te.getId().toString(), userId));
 
         return ticketMapper.toModel(te);
     }
@@ -204,7 +218,7 @@ public class TicketServiceImpl implements TicketService {
 
         te = ticketRepo.save(te);
         outboxService.saveTicketToOutbox(te, EventType.UPDATE);
-
+        // TODO: send ticket updated notification
         return ticketMapper.toModelSummary(te);
     }
 
@@ -213,6 +227,7 @@ public class TicketServiceImpl implements TicketService {
         try {
             outboxService.saveTicketToOutbox(ticketRepo.getReferenceById(UUID.fromString(ticketId)), EventType.DELETE);
             ticketRepo.deleteById(UUID.fromString(ticketId));
+            // TODO: send ticket deleted notification?
         } catch (
                 EntityNotFoundException e) {
             log.error("unable to delete document id {}", ticketId, e);
@@ -230,6 +245,7 @@ public class TicketServiceImpl implements TicketService {
 
         outboxService.saveTicketToOutbox(ticketRepo.getReferenceById(UUID.fromString(ticketId)), EventType.DELETE);
         ticketRepo.deleteById(UUID.fromString(ticketId));
+        // TODO: send ticket deleted notification?
     }
 
     // ======================================================
@@ -243,6 +259,7 @@ public class TicketServiceImpl implements TicketService {
         te.setAssignedAgentId(agentId == null ? null : UUID.fromString(agentId));
         ticketRepo.save(te);
         outboxService.saveTicketToOutbox(te, EventType.UPDATE);
+        sendNotification(buildTicketAssignedNotification(te.getId().toString(), agentId));
     }
 
     @Override
@@ -256,6 +273,7 @@ public class TicketServiceImpl implements TicketService {
         te.setStatus(TicketEntity.TicketStatus.OPENED);
         te = ticketRepo.save(te);
         outboxService.saveTicketToOutbox(te, EventType.UPDATE);
+        sendNotification(buildTicketReopenedNotification(te.getId().toString(), te.getCustomerId().toString()));
     }
 
     @Override
@@ -273,6 +291,11 @@ public class TicketServiceImpl implements TicketService {
         te.setStatus(TicketEntity.TicketStatus.OPENED);
         te = ticketRepo.save(te);
         outboxService.saveTicketToOutbox(te, EventType.UPDATE);
+
+        // since customer is the one reopening the ticket, send the
+        // notification to the assigned agent
+        if (te.getAssignedAgentId() != null)
+            sendNotification(buildTicketReopenedNotification(te.getId().toString(), te.getAssignedAgentId().toString()));
     }
 
     @Override
@@ -292,35 +315,7 @@ public class TicketServiceImpl implements TicketService {
         te.setStatus(newStatus);
         te = ticketRepo.save(te);
         outboxService.saveTicketToOutbox(te, EventType.UPDATE);
-    }
-
-    @Override
-    public void updateTicketStatus(String userId, String userRole, String ticketId, TicketStatus status) {
-        TicketEntity te = ticketRepo.findById(UUID.fromString(ticketId))
-                .orElseThrow(() -> new TicketNotFoundException(ticketId));
-
-        if (!userId.equals(te.getCustomerId().toString()) && !userRole.equals("AGENT"))
-            throw new ForbiddenException("user cannot update status of a ticket they don't own");
-
-        if (te.getStatus() == TicketEntity.TicketStatus.CLOSED)
-            throw new TicketStatusUpdateException("cannot update status of a closed ticket");
-
-        if (te.getStatus() == TicketEntity.TicketStatus.RESOLVED)
-            throw new TicketStatusUpdateException("cannot update status of a resolved ticket");
-
-        TicketEntity.TicketStatus newStatus = TicketEntity.TicketStatus.fromValue(status.getValue());
-
-        if (newStatus == TicketEntity.TicketStatus.IN_PROGRESS && userRole.equals("CUSTOMER"))
-            throw new ForbiddenException("user cannot set ticket status as in progress");
-
-        if (getTicketStatusHierarchy(newStatus) < getTicketStatusHierarchy(te.getStatus()))
-            throw new TicketStatusUpdateException(String.format(
-                    "cannot perform backward ticket status update: %s -> %s", te.getStatus(), newStatus
-            ));
-
-        te.setStatus(newStatus);
-        te = ticketRepo.save(te);
-        outboxService.saveTicketToOutbox(te, EventType.UPDATE);
+        sendNotification(buildTicketStatusChangedNotification(te.getId().toString(), te.getCustomerId().toString()));
     }
 
     private int getTicketStatusHierarchy(TicketEntity.TicketStatus status) {
@@ -377,7 +372,11 @@ public class TicketServiceImpl implements TicketService {
         } catch (DataIntegrityViolationException e) {
             throw new TicketNotFoundException(ticketId);
         }
-
+        if (userRole.equals("AGENT"))
+            sendNotification(buildTicketCommentAddedNotification(ticketId, teids.getCustomerId().toString()));
+        if (userRole.equals("CUSTOMER"))
+            if (teids.getAssignedAgentId() != null)
+                sendNotification(buildTicketCommentAddedNotification(ticketId, teids.getAssignedAgentId().toString()));
         return commentMapper.toModel(ce);
     }
 
@@ -432,5 +431,114 @@ public class TicketServiceImpl implements TicketService {
         ce.getTicket().getComments().remove(ce);
     }
 
+    private void sendNotification(TicketChangeNotificationEvent event) {
+        try {
+            Message m = MessageBuilder.withBody(objMapper.writeValueAsBytes(event))
+                    .setHeader("__TypeId__", "NotificationEvent")
+                    .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                    .build();
+            rabbitTemplate.send(RabbitMqConfig.exchange, RabbitMqConfig.ticket_change_notify_routingKey, m);
+        } catch (JsonProcessingException e) {
+            log.error("unable to send ticket {} notification", event.getType(), e);
+        }
+    }
 
+    private TicketChangeNotificationEvent buildTicketCreateNotification(
+            String ticketId,
+            String receiverId) {
+        return TicketChangeNotificationEvent.builder()
+                .ticketId(ticketId)
+                .receiverId(receiverId)
+                .message(String.format(
+                        "Your support ticket (ID: %s) has been created.",
+                        ticketId
+                ))
+                .type(NotificationType.TICKET_CREATED)
+                .build();
+    }
+
+    private TicketChangeNotificationEvent buildTicketAssignedNotification(
+            String ticketId,
+            String receiverId) {
+        return TicketChangeNotificationEvent.builder()
+                .ticketId(ticketId)
+                .receiverId(receiverId)
+                .message(String.format(
+                        "Ticket (ID: %s) has been assigned to you.",
+                        ticketId
+                ))
+                .type(NotificationType.TICKET_ASSIGNED)
+                .build();
+    }
+
+    private TicketChangeNotificationEvent buildTicketStatusChangedNotification(
+            String ticketId,
+            String receiverId) {
+        return TicketChangeNotificationEvent.builder()
+                .ticketId(ticketId)
+                .receiverId(receiverId)
+                .message(String.format(
+                        "Ticket (ID: %s) status has been updated.",
+                        ticketId
+                ))
+                .type(NotificationType.TICKET_STATUS_CHANGED)
+                .build();
+    }
+
+    private TicketChangeNotificationEvent buildTicketResolvedNotification(
+            String ticketId,
+            String receiverId) {
+        return TicketChangeNotificationEvent.builder()
+                .ticketId(ticketId)
+                .receiverId(receiverId)
+                .message(String.format(
+                        "Ticket (ID: %s) has been marked as resolved.",
+                        ticketId
+                ))
+                .type(NotificationType.TICKET_STATUS_CHANGED)
+                .build();
+    }
+
+    private TicketChangeNotificationEvent buildTicketClosedNotification(
+            String ticketId,
+            String receiverId) {
+        return TicketChangeNotificationEvent.builder()
+                .ticketId(ticketId)
+                .receiverId(receiverId)
+                .message(String.format(
+                        "Ticket (ID: %s) has been closed.",
+                        ticketId
+                ))
+                .type(NotificationType.TICKET_CLOSED)
+                .build();
+    }
+
+    private TicketChangeNotificationEvent buildTicketReopenedNotification(
+            String ticketId,
+            String receiverId) {
+        return TicketChangeNotificationEvent.builder()
+                .ticketId(ticketId)
+                .receiverId(receiverId)
+                .message(String.format(
+                        "Ticket (ID: %s) has been reopened.",
+                        ticketId
+                ))
+                .type(NotificationType.TICKET_REOPENED)
+                .build();
+    }
+
+
+    private TicketChangeNotificationEvent buildTicketCommentAddedNotification(
+            String ticketId,
+            String receiverId) {
+        return TicketChangeNotificationEvent.builder()
+                .ticketId(ticketId)
+                .receiverId(receiverId)
+                .message(String.format(
+                        "Ticket (ID: %s) has a new comment.",
+                        ticketId
+                ))
+                .type(NotificationType.COMMENT_ADDED)
+                .build();
+    }
 }

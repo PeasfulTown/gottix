@@ -1,0 +1,242 @@
+openapi: 3.0.1
+info:
+  title: Gottix Notification Service
+  description: |
+    Notifies users of ticket changes
+  contact:
+    email: emrin4@gmail.com
+  license:
+    name: MIT
+    url: https://mit-license.org/
+  version: 0.0.1
+
+tags:
+  - name: notification
+    description: Notification management
+
+paths:
+
+  /api/v1/notifications:
+    get:
+      tags: [ notification ]
+      summary: Get user's notification
+      operationId: getNotifications
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/IsReadQuery'
+        - $ref: '#/components/parameters/NotificationTypeQuery'
+        - $ref: '#/components/parameters/SortOrderQuery'
+        - $ref: '#/components/parameters/PageNumberQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
+      responses:
+        '200':
+          $ref: '#/components/responses/PagedNotificationResponse'
+
+  /api/v1/notifications/{notifId}/read:
+    patch:
+      tags: [ notification ]
+      summary: Mark notification as read
+      operationId: markNotificationAsRead
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/NotificationIdPath'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+    delete:
+      tags: [ notification ]
+      summary: Delete notification
+      operationId: deleteNotification
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/NotificationIdPath'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+  /api/v1/notifications/read-all:
+    patch:
+      tags: [ notification ]
+      summary: Mark all sent notifications as read
+      operationId: markAllNotificationsAsRead
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/BatchNotificationIdRequest'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+
+components:
+
+  parameters:
+
+    UserIdHeader:
+      name: X-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+
+    NotificationIdPath:
+      name: notifId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    IsReadQuery:
+      name: isRead
+      in: query
+      required: false
+      schema:
+        type: boolean
+
+    NotificationTypeQuery:
+      name: type
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/NotificationType'
+
+    SortByQuery:
+      name: sortBy
+      in: query
+      schema:
+        $ref: '#/components/schemas/SortField'
+
+    SortOrderQuery:
+      name: sortOrder
+      in: query
+      schema:
+        $ref: '#/components/schemas/SortOrder'
+
+    PageNumberQuery:
+      name: pageNumber
+      in: query
+      schema:
+        type: integer
+        format: int32
+        default: 0
+
+    PageSizeQuery:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        format: int32
+        default: 10
+
+  requestBodies:
+
+    BatchNotificationIdRequest:
+      description: List of notification IDs
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BatchNotificationIdRequest'
+
+  responses:
+
+    NoContent:
+      description: Successful request, returns no content
+      content: {}
+
+    PagedNotificationResponse:
+      description: Paginated notification list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PagedNotificationResponse'
+
+  schemas:
+
+    SortField:
+      type: string
+      enum:
+        - CREATED_AT
+        - UPDATED_AT
+
+    SortOrder:
+      type: string
+      enum:
+        - ASC
+        - DESC
+      default: ASC
+
+    ResponsePage:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int32
+        number:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+
+    PagedResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        page:
+          $ref: '#/components/schemas/ResponsePage'
+
+    PagedNotificationResponse:
+      allOf:
+        - $ref: '#/components/schemas/PagedResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Notification'
+
+    NotificationType:
+      type: string
+      enum:
+        - TICKET_CREATED
+        - TICKET_ASSIGNED
+        - TICKET_STATUS_CHANGED
+        - TICKET_RESOLVED
+        - TICKET_CLOSED
+        - TICKET_REOPENED
+        - COMMENT_ADDED
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        message:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        ticketId:
+          type: string
+        isRead:
+          type: boolean
+        readAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    BatchNotificationIdRequest:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            type: string

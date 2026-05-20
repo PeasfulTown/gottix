@@ -189,16 +189,14 @@ public class TicketController implements TicketApi {
         return status(HttpStatus.NO_CONTENT).build();
     }
 
+    @IsAdminOrAgent
     @Override
     public ResponseEntity<Void> updateTicketStatus(
             String xUserId,
             String xUserRole,
             String ticketId,
             TicketStatusUpdateRequest ticketStatusUpdateRequest) throws Exception {
-        if (xUserRole.equals("ADMIN"))
-            ticketService.updateTicketStatus(ticketId, ticketStatusUpdateRequest.getStatus());
-        else
-            ticketService.updateTicketStatus(xUserId, xUserRole, ticketId, ticketStatusUpdateRequest.getStatus());
+        ticketService.updateTicketStatus(ticketId, ticketStatusUpdateRequest.getStatus());
         return status(HttpStatus.NO_CONTENT).build();
     }
 
