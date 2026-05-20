@@ -14,9 +14,11 @@ public class RabbitMqConfig {
 
     public static String ticket_change_queue;
     public static String ticket_change_routingKey;
+    public static String ticket_change_notify_queue;
 
     public static String ticketComment_change_queue;
     public static String ticketComment_change_routingKey;
+    public static String ticket_change_notify_routingKey;
 
     // ============================================================
     // DECLARATIONS
@@ -45,6 +47,16 @@ public class RabbitMqConfig {
     @Bean
     public Binding ticketCommentChangeQueue_binding(TopicExchange exchange, Queue ticketComment_change_queue) {
         return BindingBuilder.bind(ticketComment_change_queue).to(exchange).with(ticketComment_change_routingKey);
+    }
+
+    @Bean
+    public Queue ticket_change_notify_queue() {
+        return new Queue(ticket_change_notify_queue);
+    }
+
+    @Bean
+    public Binding ticketChangeNotifyQueue_binding(TopicExchange exchange, Queue ticket_change_notify_queue) {
+        return BindingBuilder.bind(ticket_change_notify_queue).to(exchange).with(ticketComment_change_routingKey);
     }
 
     // ============================================================
@@ -89,4 +101,15 @@ public class RabbitMqConfig {
         RabbitMqConfig.ticketComment_change_routingKey = ticketComment_change_routingKey;
     }
 
+    @Value("${rabbitmq.queue.ticket-change-notify}")
+    public void setTicket_change_notify_queue(
+            String ticket_change_notify_queue) {
+        RabbitMqConfig.ticket_change_notify_queue = ticket_change_notify_queue;
+    }
+
+    @Value("${rabbitmq.routing-key.ticket-change-notify}")
+    public void setTicket_change_notify_routingKey(
+            String ticket_change_notify_routingKey) {
+        RabbitMqConfig.ticket_change_notify_routingKey = ticket_change_notify_routingKey;
+    }
 }

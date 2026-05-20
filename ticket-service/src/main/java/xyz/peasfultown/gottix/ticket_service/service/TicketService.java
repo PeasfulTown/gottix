@@ -46,8 +46,6 @@ public interface TicketService {
 
     void updateTicketStatus(String ticketId, @Valid TicketStatus status);
 
-    void updateTicketStatus(String userId, String userRole, String ticketId, @Valid TicketStatus status);
-
     void updateTicketPriority(String userId, String userRole, String ticketId, @Valid TicketPriority priority);
 
     // ======================================================
