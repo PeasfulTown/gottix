@@ -2,6 +2,3 @@ spring:
 
   application:
     name: NotificationService
-
-  config:
-    import: configserver:http://localhost:8888

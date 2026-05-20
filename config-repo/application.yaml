@@ -15,8 +15,15 @@ spring:
 
   datasource:
     url: ${DB_POSTGRES_URL}
-    username: ${DB_POSTGRES_USERNAME}
-    password: ${DB_POSTGRES_PASSWORD}
+    username: user
+    password: password
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: 5672
+    username: user
+    password: password
+    virtual-host: gottix
 
   jpa:
     hibernate:
@@ -34,14 +41,6 @@ spring:
     serialization:
       write-dates-as-timestamps: false
     time-zone: UTC
-
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: user
-    password: password
-    virtual-host: gottix
-
 
 rabbitmq:
   exchange:
