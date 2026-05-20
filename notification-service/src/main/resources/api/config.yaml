@@ -1,0 +1,15 @@
+library: "spring-boot"
+modelPackage: "xyz.peasfultown.gottix.notification_service.model"
+apiPackage: "xyz.peasfultown.gottix.notifcation_service"
+invokerPackage: "xyz.peasfultown.gottix.notification_service"
+dateLibrary: "java8"
+unhandledException: true
+sourceFolder: "src/main/java"
+resourceFolder: "src/main/resources"
+useBeanValidation: true
+useJakartaEe: true
+useSpringBoot3: true
+useTags: true
+generateBuilders: true
+serializableModel: true
+useSwaggerUI: true
