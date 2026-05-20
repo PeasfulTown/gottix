@@ -1,0 +1,7 @@
+server.port: 8084
+
+spring:
+
+  flyway:
+    default-schema: notification
+    create-schema: true

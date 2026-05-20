@@ -28,6 +28,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    baseline-on-migrate: true
 
   jackson:
     serialization:
@@ -41,15 +42,18 @@ spring:
     password: password
     virtual-host: gottix
 
+
 rabbitmq:
   exchange:
     main: main
   queue:
     ticket-change: ticket.change
-    ticket-comment-change: ticket-comment-change
+    ticket-comment-change: ticket.comment.change
+    ticket-change-notify: ticket.change.notify
   routing-key:
     ticket-change: ticket.change
-    ticket-comment-change: ticket-comment-change
+    ticket-comment-change: ticket.comment.change
+    ticket-change-notify: ticket.change.notify
 
 security:
   oauth2:
