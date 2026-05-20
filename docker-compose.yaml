@@ -17,7 +17,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgres/data
-      - ./init-scripts/postgres/db_init.sql:/docker-entrypoint-initdb.d/init-databases.sql
     networks:
       - gottix
 
@@ -78,36 +77,36 @@ services:
       - gottix
 
   # == Kibana ===========================================================
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.13.4
-    container_name: gottix_kibana
-    restart: unless-stopped
-    depends_on:
-      - elasticsearch
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
-    networks:
-      - gottix
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:8.13.4
+  #   container_name: gottix_kibana
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - elasticsearch
+  #   environment:
+  #     - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+  #   ports:
+  #     - "5601:5601"
+  #   networks:
+  #     - gottix
 
   # == Logstash =========================================================
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.13.4
-    container_name: gottix_logstash
-    restart: unless-stopped
-    depends_on:
-      - elasticsearch
-    ports:
-      - "5000:5000"   # TCP - Logback ships JSON here
-      - "9600:9600"
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
-      - ./logstash/config/logstash.yaml:/usr/share/logstash/config/logstash.yml
-    environment:
-      - LS_JAVA_OPTS=-Xms256m -Xmx256m
-    networks:
-      - gottix
+  # logstash:
+  #   image: docker.elastic.co/logstash/logstash:8.13.4
+  #   container_name: gottix_logstash
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - elasticsearch
+  #   ports:
+  #     - "5000:5000"   # TCP - Logback ships JSON here
+  #     - "9600:9600"
+  #   volumes:
+  #     - ./logstash/pipeline:/usr/share/logstash/pipeline
+  #     - ./logstash/config/logstash.yaml:/usr/share/logstash/config/logstash.yml
+  #   environment:
+  #     - LS_JAVA_OPTS=-Xms256m -Xmx256m
+  #   networks:
+  #     - gottix
 
   # ====================================================
   # SPRING CLOUD INFRASTRUCTURE
@@ -152,6 +151,7 @@ services:
       timeout: 5s
       retries: 10
 
+  # == Api gateway ======================================================
   api-gateway:
     build:
       context: ./api-gateway
@@ -163,10 +163,110 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      auth:
+        condition: service_started
+      ticket:
+        condition: service_started
+      search:
+        condition: service_started
+      notification:
+        condition: service_started
     environment:
       EUREKA_SERVICE_URL: http://eureka-server:8761/eureka
     ports:
       - "8080:8080"
+    networks:
+      - gottix
+
+  # ============================================================
+  # MICROSERVICES
+  # ============================================================
+
+  auth:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: gottix_auth
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    env_file: 
+      - .env
+    ports:
+      - "8081:8081"
+    networks:
+      - gottix
+
+  ticket:
+    build:
+      context: ./ticket-service
+      dockerfile: Dockerfile
+    container_name: gottix_ticket
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    env_file: 
+      - .env
+    ports:
+      - "8082:8082"
+    networks:
+      - gottix
+
+  search:
+    build:
+      context: ./search-service
+      dockerfile: Dockerfile
+    container_name: gottix_search
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    env_file: 
+      - .env
+    ports:
+      - "8083:8083"
+    networks:
+      - gottix
+
+  notification:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: gottix_notification
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    env_file: 
+      - .env
+    ports:
+      - "8084:8084"
     networks:
       - gottix
 

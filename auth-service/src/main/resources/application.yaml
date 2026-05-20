@@ -2,6 +2,3 @@ spring:
 
   application:
     name: AuthService
-
-  config:
-    import: configserver:http://localhost:8888

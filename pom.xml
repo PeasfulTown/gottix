@@ -12,6 +12,8 @@
     <module>eureka-server</module>
     <module>auth-service</module>
     <module>ticket-service</module>
+    <module>search-service</module>
+    <module>notification-service</module>
     <module>api-gateway</module>
   </modules>
 </project>
