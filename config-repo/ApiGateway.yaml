@@ -49,9 +49,3 @@ springdoc:
         url: /openapi-search.yaml
       - name: Notification service
         url: /openapi-notification.yaml
-
-logging:
-  level:
-    org.springframework.cloud.gateway: TRACE
-    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
-    reactor.netty.http.client: DEBUG

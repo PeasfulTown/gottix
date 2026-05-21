@@ -70,4 +70,19 @@ jwt:
 
 logging:
   level:
-    org.springframework.security: DEBUG
+    xyz.peasfultown.gottix: INFO
+    # infrastructure
+    com.netflix.eureka: WARN
+    com.netflix.discovery: WARN
+    org.springframework: WARN
+    org.springframework.cloud.config.client: WARN
+    # connectivity
+    reactor.netty.http.client: WARN
+    org.springframework.amqp: WARN
+    net.logstash.logback: WARN
+    # routing and security
+    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
+    org.springframework.security: INFO
+    # persistence
+    org.hibernate: WARN
