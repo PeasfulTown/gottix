@@ -15,7 +15,7 @@ import static org.springframework.http.ResponseEntity.status;
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<?> handleRuntimeException(BaseException exception, WebRequest request) {
-        log.error("request failed, status: {}, message: {}", exception.getErrorCode(), exception.getMessage());
+        log.error("request failed, code: {}, message: {}", exception.getErrorCode(), exception.getMessage());
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 exception.getHttpStatus(),
                 exception.getMessage()
