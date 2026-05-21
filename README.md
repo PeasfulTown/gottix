@@ -81,3 +81,15 @@ Running on docker container using docker compose.
 | Testing               | JUnit 5, Testcontainers, WireMock                 |
 | Build Tool            | Maven                                             |
 
+## Kibana Dashboard
+
+ELK is implemented for centralized logging and observability, I've created a
+simple Kibana Dashboard [dash.ndjson](./dash.ndjson) that can be imported.
+
+The dash shows a pie graph of percentages of logs coming from each microservices
+and the API Gateway, percentages of logs grouped by level (TRACE, INFO, WARN,
+ERROR), log activities from each microservices the last 30 minutes, and a table
+of recent errors with their error messages.
+
+![Simple Kibana dashboard](./dash.png)
+
