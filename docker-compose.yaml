@@ -77,36 +77,35 @@ services:
       - gottix
 
   # == Kibana ===========================================================
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:8.13.4
-  #   container_name: gottix_kibana
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - elasticsearch
-  #   environment:
-  #     - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-  #   ports:
-  #     - "5601:5601"
-  #   networks:
-  #     - gottix
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: gottix_kibana
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - gottix
 
   # == Logstash =========================================================
-  # logstash:
-  #   image: docker.elastic.co/logstash/logstash:8.13.4
-  #   container_name: gottix_logstash
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - elasticsearch
-  #   ports:
-  #     - "5000:5000"   # TCP - Logback ships JSON here
-  #     - "9600:9600"
-  #   volumes:
-  #     - ./logstash/pipeline:/usr/share/logstash/pipeline
-  #     - ./logstash/config/logstash.yaml:/usr/share/logstash/config/logstash.yml
-  #   environment:
-  #     - LS_JAVA_OPTS=-Xms256m -Xmx256m
-  #   networks:
-  #     - gottix
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.4
+    container_name: gottix_logstash
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5044:5044"   # TCP - Logback ships JSON here
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+    networks:
+      - gottix
 
   # ====================================================
   # SPRING CLOUD INFRASTRUCTURE
@@ -173,6 +172,7 @@ services:
         condition: service_started
     environment:
       EUREKA_SERVICE_URL: http://eureka-server:8761/eureka
+      LOGSTASH_HOST: logstash:5044
     ports:
       - "8080:8080"
     networks:

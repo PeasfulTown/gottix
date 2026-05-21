@@ -54,6 +54,9 @@ rabbitmq:
     ticket-comment-change: ticket.comment.change
     ticket-change-notify: ticket.change.notify
 
+logstash:
+  host: ${LOGSTASH_HOST}
+
 security:
   oauth2:
     resourceserver:
