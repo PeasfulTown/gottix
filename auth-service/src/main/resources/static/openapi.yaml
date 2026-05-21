@@ -230,6 +230,10 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PagedUserResponse'
+
+    NoContent:
+      description: Successful request, returns no content
+      content: {}
   schemas:
 
     ProblemDetail:
